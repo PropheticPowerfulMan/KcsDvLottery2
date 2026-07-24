@@ -270,13 +270,19 @@
       }
       .drc-map {
         width: 100%;
-        height: 250px;
+        height: 270px;
         display: block;
       }
       .drc-outline {
-        fill: rgba(255, 217, 106, .08);
-        stroke: rgba(255, 217, 106, .45);
-        stroke-width: 1.8;
+        fill: rgba(255, 217, 106, .1);
+        stroke: rgba(255, 217, 106, .58);
+        stroke-width: 2.2;
+        filter: drop-shadow(0 18px 24px rgba(0,0,0,.22));
+      }
+      .province-boundary {
+        fill: rgba(245,184,46,.1);
+        stroke: rgba(255,217,106,.22);
+        stroke-width: 1;
       }
       .province-zone {
         fill: rgba(245,184,46,.34);
@@ -295,9 +301,17 @@
       }
       .province-label {
         fill: rgba(247,249,252,.82);
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 800;
         pointer-events: none;
+      }
+      .map-note {
+        position: absolute;
+        left: 14px;
+        bottom: 10px;
+        color: rgba(174,187,205,.82);
+        font-size: 11px;
+        font-weight: 650;
       }
 
       .legend { align-self: center; display: grid; gap: 15px; }
@@ -681,34 +695,36 @@
       function provincePanel() {
         const counts = app.applications.reduce((acc, item) => ({ ...acc, [item.province]: (acc[item.province] || 0) + 1 }), {});
         const provinces = [
-          { name: "Kinshasa", color: "#ffd96a", path: "M68 128 L88 118 L104 126 L98 145 L76 148 Z", label: [72, 139, "KIN"] },
-          { name: "Haut-Katanga", color: "#f5b82e", path: "M260 178 L318 168 L352 190 L344 232 L288 224 L252 204 Z", label: [285, 202, "HK"] },
-          { name: "Lualaba", color: "#d99c1d", path: "M202 158 L260 178 L252 204 L224 226 L182 206 L170 176 Z", label: [204, 194, "LUA"] },
-          { name: "Nord-Kivu", color: "#c8a85c", path: "M326 88 L354 96 L346 128 L320 126 L310 106 Z", label: [320, 112, "NK"] },
-          { name: "South-Kivu", color: "#e8b93f", path: "M318 128 L346 128 L342 158 L312 162 L300 144 Z", label: [309, 148, "SK"] }
+          { name: "Kinshasa", color: "#ffd96a", path: "M71 146 L94 136 L111 146 L103 163 L78 165 Z", label: [79, 156, "KIN"] },
+          { name: "Haut-Katanga", color: "#f5b82e", path: "M257 199 L292 186 L344 199 L366 226 L344 257 L292 248 L252 222 Z", label: [302, 222, "HAUT-KAT"] },
+          { name: "Lualaba", color: "#d99c1d", path: "M205 181 L257 199 L252 222 L223 248 L180 226 L166 198 Z", label: [201, 213, "LUALABA"] },
+          { name: "Nord-Kivu", color: "#c8a85c", path: "M334 106 L363 112 L359 148 L333 148 L321 126 Z", label: [331, 131, "N-KIVU"] },
+          { name: "South-Kivu", color: "#e8b93f", path: "M333 148 L359 148 L356 181 L326 184 L313 162 Z", label: [324, 168, "S-KIVU"] }
         ];
-        const outlinePath = "M54 126 L70 107 L88 104 L104 86 L134 92 L154 72 L184 82 L210 58 L238 68 L268 50 L300 58 L330 76 L364 84 L350 124 L366 148 L338 170 L356 194 L346 232 L292 228 L252 210 L224 232 L184 212 L154 220 L124 194 L94 184 L72 156 L42 150 Z";
+        const outlinePath = "M45 150 L66 134 L82 110 L108 112 L122 91 L151 97 L169 72 L201 82 L222 55 L258 70 L284 54 L323 69 L354 94 L379 103 L365 133 L372 162 L350 190 L370 223 L344 257 L294 249 L256 227 L224 252 L181 229 L152 235 L120 208 L96 192 L76 168 L48 165 Z";
         const backgroundCells = [
-          "M88 104 L104 86 L134 92 L126 128 L104 126 Z",
-          "M134 92 L154 72 L184 82 L176 120 L126 128 Z",
-          "M184 82 L210 58 L238 68 L226 116 L176 120 Z",
-          "M238 68 L268 50 L300 58 L292 108 L226 116 Z",
-          "M292 108 L300 58 L330 76 L326 88 L310 106 Z",
-          "M104 126 L126 128 L134 164 L98 145 Z",
-          "M126 128 L176 120 L170 176 L134 164 Z",
-          "M176 120 L226 116 L202 158 L170 176 Z",
-          "M226 116 L292 108 L260 178 L202 158 Z",
-          "M292 108 L310 106 L320 126 L300 144 L260 178 Z",
-          "M98 145 L134 164 L124 194 L94 184 L72 156 Z",
-          "M134 164 L170 176 L182 206 L154 220 L124 194 Z"
+          "M82 110 L108 112 L122 91 L151 97 L143 132 L111 146 L94 136 Z",
+          "M151 97 L169 72 L201 82 L190 127 L143 132 Z",
+          "M201 82 L222 55 L258 70 L248 122 L190 127 Z",
+          "M258 70 L284 54 L323 69 L334 106 L293 117 L248 122 Z",
+          "M293 117 L334 106 L321 126 L313 162 L278 160 Z",
+          "M111 146 L143 132 L166 160 L166 198 L130 190 L103 163 Z",
+          "M143 132 L190 127 L205 181 L166 198 L166 160 Z",
+          "M190 127 L248 122 L257 199 L205 181 Z",
+          "M248 122 L278 160 L292 186 L257 199 Z",
+          "M278 160 L313 162 L326 184 L292 186 Z",
+          "M103 163 L130 190 L120 208 L96 192 L76 168 Z",
+          "M130 190 L166 198 L180 226 L152 235 L120 208 Z",
+          "M224 252 L252 222 L292 248 L256 227 Z"
         ];
         return `<section class="panel"><div class="panel-head"><h2>Applications by Province</h2><span class="muted">Click a province</span></div>
           <div class="province"><div class="map">
-            <svg class="drc-map" viewBox="20 32 370 220" role="img" aria-label="Democratic Republic of Congo province map">
+            <svg class="drc-map" viewBox="28 42 360 230" role="img" aria-label="Democratic Republic of Congo province map">
               <path class="drc-outline" d="${outlinePath}"></path>
-              ${backgroundCells.map(path => `<path class="province-zone" style="fill:rgba(245,184,46,.12)" d="${path}"></path>`).join("")}
+              ${backgroundCells.map(path => `<path class="province-boundary" d="${path}"></path>`).join("")}
               ${provinces.map(province => `<path class="province-zone ${province.name === app.selectedProvince ? "hot" : ""}" data-province="${province.name}" style="fill:${province.name === app.selectedProvince ? "rgba(255,217,106,.78)" : province.color + "66"}" d="${province.path}"></path><text class="province-label" x="${province.label[0]}" y="${province.label[1]}">${province.label[2]}</text>`).join("")}
             </svg>
+            <span class="map-note">Simplified DRC operational map for dashboard filtering</span>
           </div><div class="legend">
             ${provinces.map(province => `<button class="legend-row" data-province="${province.name}"><span><i class="dot" style="background:${province.color}"></i>${province.name}</span><strong>${counts[province.name] || 0}</strong></button>`).join("")}
           </div></div></section>`;
