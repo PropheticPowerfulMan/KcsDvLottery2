@@ -6,7 +6,7 @@
     <title>KCS Opportunity Program</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
     <style>
       :root {
         --school-blue: #129fd3;
@@ -16,9 +16,9 @@
         --sidebar: #031024;
         --card: #0b1f35;
         --elevated: #102841;
-        --gold: #f5b82e;
-        --gold-2: #d99c1d;
-        --gold-light: #ffd96a;
+        --gold: #129fd3;
+        --gold-2: #087fb0;
+        --gold-light: #64d6ff;
         --cyan: #27c4f4;
         --success: #32c76a;
         --danger: #e5574f;
@@ -28,13 +28,13 @@
       }
 
       body.theme-sun {
-        --bg: #eaf8ff;
+        --bg: #eef9ff;
         --sidebar: #ffffff;
         --card: #ffffff;
-        --elevated: #dff5ff;
-        --gold: #f5b82e;
-        --gold-2: #d99c1d;
-        --gold-light: #8a6200;
+        --elevated: #e5f6ff;
+        --gold: #129fd3;
+        --gold-2: #087fb0;
+        --gold-light: #075f86;
         --cyan: #129fd3;
         --success: #14884d;
         --danger: #c93f38;
@@ -48,9 +48,9 @@
         --sidebar: #031024;
         --card: #0b1f35;
         --elevated: #102841;
-        --gold: #f5b82e;
-        --gold-2: #d99c1d;
-        --gold-light: #ffd96a;
+        --gold: #129fd3;
+        --gold-2: #087fb0;
+        --gold-light: #64d6ff;
         --cyan: #27c4f4;
         --success: #32c76a;
         --danger: #e5574f;
@@ -63,19 +63,19 @@
       html, body { width: 100%; height: 100%; overflow: hidden; }
       body {
         margin: 0;
-        font-family: Inter, system-ui, sans-serif;
+        font-family: "Space Grotesk", system-ui, sans-serif;
         color: var(--text);
         background:
           radial-gradient(circle at 80% -10%, rgba(18, 159, 211, 0.18), transparent 30%),
-          radial-gradient(circle at 12% 8%, rgba(245, 184, 46, 0.14), transparent 24%),
+          radial-gradient(circle at 12% 8%, rgba(18, 159, 211, 0.14), transparent 24%),
           linear-gradient(135deg, #020814 0%, var(--bg) 50%, #020711 100%);
       }
 
       body.theme-sun {
         background:
-          radial-gradient(circle at 82% 0%, rgba(245,184,46,.32), transparent 28%),
+          radial-gradient(circle at 82% 0%, rgba(18,159,211,.22), transparent 28%),
           radial-gradient(circle at 0% 18%, rgba(18,159,211,.24), transparent 26%),
-          linear-gradient(135deg, #f8fdff 0%, #eaf8ff 48%, #dff5ff 100%);
+          linear-gradient(135deg, #f8fdff 0%, #eef9ff 48%, #e5f6ff 100%);
       }
 
       button, input, select { font: inherit; }
@@ -122,7 +122,7 @@
         border-radius: 50%;
         background: white;
         border: 1px solid rgba(255,255,255,.2);
-        box-shadow: 0 0 34px rgba(18,159,211,.2), 0 0 22px rgba(245,184,46,.16);
+        box-shadow: 0 0 34px rgba(18,159,211,.2), 0 0 22px rgba(18,159,211,.16);
       }
 
       .brand strong {
@@ -192,9 +192,9 @@
       .nav-item:hover { border-color: var(--border); background: rgba(255,255,255,.045); color: white; }
       .nav-item.active {
         color: white;
-        border-color: rgba(245,184,46,.42);
-        background: linear-gradient(90deg, rgba(245,184,46,.44), rgba(217,156,29,.18));
-        box-shadow: 0 0 34px rgba(245,184,46,.16);
+        border-color: rgba(18,159,211,.42);
+        background: linear-gradient(90deg, rgba(18,159,211,.44), rgba(8,127,176,.18));
+        box-shadow: 0 0 34px rgba(18,159,211,.16);
       }
 
       main {
@@ -253,7 +253,7 @@
       }
 
       .field { width: min(360px, 100%); height: 42px; padding: 0 13px; outline: none; }
-      .field:focus, .select:focus { border-color: rgba(245,184,46,.55); box-shadow: 0 0 0 3px rgba(245,184,46,.12); }
+      .field:focus, .select:focus { border-color: rgba(18,159,211,.55); box-shadow: 0 0 0 3px rgba(18,159,211,.12); }
       .select { height: 42px; padding: 0 12px; }
       .select option { color: #061426; }
 
@@ -265,9 +265,9 @@
 
       .btn.gold {
         color: #07101d;
-        border-color: rgba(255,217,106,.55);
+        border-color: rgba(18,159,211,.55);
         background: linear-gradient(135deg, var(--gold-light), var(--gold));
-        box-shadow: 0 10px 28px rgba(245,184,46,.18);
+        box-shadow: 0 10px 28px rgba(18,159,211,.18);
       }
 
       .icon-btn {
@@ -304,7 +304,7 @@
       body.theme-sun .card {
         background:
           linear-gradient(145deg, rgba(255,255,255,.94), rgba(229,247,255,.92)),
-          radial-gradient(circle at 8% 0%, rgba(245,184,46,.14), transparent 40%);
+          radial-gradient(circle at 8% 0%, rgba(18,159,211,.12), transparent 40%);
         box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 18px 40px rgba(18,159,211,.12);
       }
 
@@ -353,7 +353,7 @@
         inset: 12px;
         background:
           radial-gradient(circle at 30% 48%, rgba(255,217,106,.12), transparent 22%),
-          linear-gradient(135deg, rgba(245,184,46,.05), transparent);
+          linear-gradient(135deg, rgba(18,159,211,.05), transparent);
       }
       .drc-map {
         width: 100%;
@@ -376,13 +376,13 @@
         filter: drop-shadow(0 18px 24px rgba(0,0,0,.22));
       }
       .province-boundary {
-        fill: rgba(245,184,46,.1);
-        stroke: rgba(255,217,106,.22);
+        fill: rgba(18,159,211,.1);
+        stroke: rgba(18,159,211,.22);
         stroke-width: 1;
       }
       .province-zone {
-        fill: rgba(245,184,46,.34);
-        stroke: rgba(255,217,106,.52);
+        fill: rgba(18,159,211,.34);
+        stroke: rgba(18,159,211,.52);
         stroke-width: 1.1;
         transition: fill .2s ease, filter .2s ease, transform .2s ease;
         transform-box: fill-box;
@@ -391,8 +391,8 @@
       }
       .province-zone:hover,
       .province-zone.hot {
-        fill: rgba(255,217,106,.78);
-        filter: drop-shadow(0 0 10px rgba(255,217,106,.34));
+        fill: rgba(18,159,211,.78);
+        filter: drop-shadow(0 0 10px rgba(18,159,211,.34));
         transform: scale(1.015);
       }
       .province-pin {
@@ -403,7 +403,7 @@
         min-width: 32px;
         height: 24px;
         padding: 0 7px;
-        border: 1px solid rgba(255,217,106,.55);
+        border: 1px solid rgba(18,159,211,.55);
         border-radius: 999px;
         background: rgba(5, 18, 34, .88);
         color: var(--gold-light);
@@ -462,7 +462,7 @@
         font-size: 12px;
         font-weight: 800;
       }
-      .pending { background: rgba(245,184,46,.18); color: var(--gold-light); }
+      .pending { background: rgba(18,159,211,.18); color: var(--gold-light); }
       .review { background: rgba(39,196,244,.18); color: var(--cyan); }
       .verified { background: rgba(50,199,106,.18); color: var(--success); }
       .danger { background: rgba(229,87,79,.18); color: var(--danger); }
@@ -500,7 +500,7 @@
         z-index: 50;
         max-width: 360px;
         padding: 14px 16px;
-        border: 1px solid rgba(245,184,46,.35);
+        border: 1px solid rgba(18,159,211,.35);
         border-radius: 10px;
         background: #081b30;
         color: white;
@@ -542,7 +542,7 @@
         width: 34px;
         height: 34px;
         border-radius: 50%;
-        background: rgba(245,184,46,.16);
+        background: rgba(18,159,211,.16);
         color: var(--gold-light);
         font-weight: 850;
       }
@@ -601,7 +601,7 @@
         margin-top: 14px;
         padding: 12px 14px;
         border-left: 4px solid var(--gold);
-        background: rgba(245,184,46,.08);
+        background: rgba(18,159,211,.08);
         color: var(--muted);
         font-size: 13px;
         line-height: 1.55;
@@ -720,7 +720,7 @@
         ],
         monthly: [42, 66, 91, 128, 158, 196, 237],
         payments: [
-          { name: "M-Pesa", value: 5400, color: "#f5b82e" },
+          { name: "M-Pesa", value: 5400, color: "#129fd3" },
           { name: "Airtel Money", value: 2850, color: "#2d9cdb" },
           { name: "Orange Money", value: 1650, color: "#e5574f" },
           { name: "Bank Transfer", value: 2250, color: "#32c76a" },
@@ -878,10 +878,10 @@
         const d = points.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
         const area = `${d} L690 230 L60 230Z`;
         return `<svg class="chart" viewBox="0 0 720 260" role="img">
-          <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f5b82e" stop-opacity=".48"/><stop offset="1" stop-color="#f5b82e" stop-opacity=".03"/></linearGradient></defs>
+          <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#129fd3" stop-opacity=".48"/><stop offset="1" stop-color="#129fd3" stop-opacity=".03"/></linearGradient></defs>
           <g stroke="rgba(255,255,255,.11)"><path d="M50 35H700"/><path d="M50 90H700"/><path d="M50 145H700"/><path d="M50 200H700"/></g>
-          <path d="${area}" fill="url(#area)"/><path d="${d}" fill="none" stroke="#f5b82e" stroke-width="3"/>
-          <g fill="#f5b82e" stroke="#ffd96a">${points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="5"/>`).join("")}</g>
+          <path d="${area}" fill="url(#area)"/><path d="${d}" fill="none" stroke="#129fd3" stroke-width="3"/>
+          <g fill="#129fd3" stroke="#64d6ff">${points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="5"/>`).join("")}</g>
           <g fill="#d5deea" font-size="13">${["Jan","Feb","Mar","Apr","May","Jun","Jul"].map((m, i) => `<text x="${55 + i * 105}" y="248">${m}</text>`).join("")}</g>
         </svg>`;
       }
@@ -889,11 +889,11 @@
       function provincePanel() {
         const counts = app.applications.reduce((acc, item) => ({ ...acc, [item.province]: (acc[item.province] || 0) + 1 }), {});
         const provinces = [
-          { name: "Kinshasa", color: "#ffd96a", x: 20, y: 55, label: "KIN" },
-          { name: "Haut-Katanga", color: "#f5b82e", x: 78, y: 82, label: "HAUT-KAT" },
-          { name: "Lualaba", color: "#d99c1d", x: 58, y: 77, label: "LUALABA" },
-          { name: "Nord-Kivu", color: "#c8a85c", x: 86, y: 43, label: "N-KIVU" },
-          { name: "South-Kivu", color: "#e8b93f", x: 84, y: 58, label: "S-KIVU" }
+          { name: "Kinshasa", color: "#64d6ff", x: 20, y: 55, label: "KIN" },
+          { name: "Haut-Katanga", color: "#129fd3", x: 78, y: 82, label: "HAUT-KAT" },
+          { name: "Lualaba", color: "#087fb0", x: 58, y: 77, label: "LUALABA" },
+          { name: "Nord-Kivu", color: "#4cc8ee", x: 86, y: 43, label: "N-KIVU" },
+          { name: "South-Kivu", color: "#22b8e8", x: 84, y: 58, label: "S-KIVU" }
         ];
         return `<section class="panel"><div class="panel-head"><h2>Applications by Province</h2><span class="muted">Click a province</span></div>
           <div class="province"><div class="map">
