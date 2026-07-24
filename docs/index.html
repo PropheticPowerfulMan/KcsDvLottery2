@@ -529,6 +529,32 @@
         border-radius: 10px;
         background: rgba(255,255,255,.03);
       }
+      .official-banner {
+        border: 1px solid rgba(255,217,106,.24);
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(3,16,36,.96), rgba(11,31,53,.94));
+        padding: 22px;
+      }
+      .official-title {
+        margin-top: 10px;
+        font-size: clamp(28px, 4vw, 48px);
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+      .notice-strip {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-left: 4px solid var(--gold);
+        background: rgba(245,184,46,.08);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .status-check {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
       .hidden { display: none !important; }
 
       footer { margin-top: 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
@@ -614,7 +640,7 @@
       const app = {
         role: "student",
         adminUnlocked: false,
-        view: "student_portal",
+        view: "entry_home",
         campaign: "2026",
         search: "",
         status: "all",
@@ -667,8 +693,8 @@
       };
 
       const applicantNavGroups = [
-        ["APPLICANT", ["Student Portal", "Apply Now", "My Documents", "Pay Fee", "Application Status", "My Result"]],
-        ["SUPPORT", ["Messages", "Announcements"]]
+        ["ENTRANT", ["Entry Home", "Begin Entry", "Entrant Status Check", "My Documents", "Pay Fee"]],
+        ["SUPPORT", ["Messages", "Announcements", "Admin Sign In"]]
       ];
 
       const adminNavGroups = [
@@ -679,7 +705,7 @@
         ["REPORTS", ["Analytics", "Reports", "Exports"]]
       ];
 
-      const icons = { "Student Portal": "SP", "Apply Now": "+", "My Documents": "MD", "Pay Fee": "$", "Application Status": "AS", "My Result": "MR", Dashboard: "D", Applications: "A", Payments: "$", Documents: "F", Messages: "M", Students: "S", Guardians: "G", Reviewers: "R", Administrators: "AD", "Roles & Permissions": "RP", Campaigns: "C", "Eligibility Rules": "ER", Selection: "SL", Results: "RS", Announcements: "AN", Settings: "ST", Security: "SC", "Audit Logs": "AL", "Backup & Recovery": "BR", Analytics: "CH", Reports: "RE", Exports: "EX" };
+      const icons = { "Entry Home": "EH", "Begin Entry": "BE", "Entrant Status Check": "ESC", "Admin Sign In": "AI", "Student Portal": "SP", "Apply Now": "+", "My Documents": "MD", "Pay Fee": "$", "Application Status": "AS", "My Result": "MR", Dashboard: "D", Applications: "A", Payments: "$", Documents: "F", Messages: "M", Students: "S", Guardians: "G", Reviewers: "R", Administrators: "AD", "Roles & Permissions": "RP", Campaigns: "C", "Eligibility Rules": "ER", Selection: "SL", Results: "RS", Announcements: "AN", Settings: "ST", Security: "SC", "Audit Logs": "AL", "Backup & Recovery": "BR", Analytics: "CH", Reports: "RE", Exports: "EX" };
       const labels = { pending: "Pending", under_review: "Under Review", verified: "Verified", eligible: "Eligible", submitted: "Submitted", correction_required: "Correction", selected: "Selected" };
 
       function slug(value) {
@@ -718,13 +744,13 @@
           app.adminUnlocked = true;
         }
         app.role = role;
-        app.view = role === "admin" ? "dashboard" : "student_portal";
+        app.view = role === "admin" ? "dashboard" : "entry_home";
         render();
         toast(role === "admin" ? "Admin workspace opened" : "Student portal opened");
       }
 
       function isApplicantView(view) {
-        return ["student_portal", "apply_now", "my_documents", "pay_fee", "application_status", "my_result", "messages", "announcements"].includes(view);
+        return ["entry_home", "begin_entry", "entrant_status_check", "student_portal", "apply_now", "my_documents", "pay_fee", "application_status", "my_result", "messages", "announcements", "admin_sign_in"].includes(view);
       }
 
       function renderNav() {
@@ -735,6 +761,11 @@
             ${items.map(item => `<button class="nav-item ${slug(item) === app.view ? "active" : ""}" data-view="${slug(item)}"><span>${icons[item]}</span>${item}</button>`).join("")}
           </div>`).join("");
         document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => {
+          if (btn.dataset.view === "admin_sign_in") {
+            setRole("admin");
+            closeNav();
+            return;
+          }
           app.view = btn.dataset.view;
           closeNav();
           render();
@@ -839,8 +870,9 @@
 
       function studentPortalView() {
         const progress = applicantProgress();
-        return `<div class="grid"><section class="panel"><div class="panel-head"><h2>Welcome, ${app.applicant.firstName}</h2><button class="btn gold" onclick="goView('apply_now')">Continue Application</button></div>
-          <p class="muted">Application number: <strong style="color:white">${app.applicant.applicationNumber}</strong></p>
+        return `<div class="official-banner"><p class="muted">Kinshasa Christian School</p><h1 class="official-title">KCS Opportunity Program Entry</h1><p class="muted" style="margin-top:12px;max-width:760px">Submit your private academic opportunity entry, pay the school application fee, and later check your result using your confirmation number.</p><div class="notice-strip">This platform is not the United States Diversity Visa Program and is not affiliated with the U.S. Government, the U.S. Department of State, USCIS, or the U.S. Embassy.</div><div class="controls" style="margin-top:18px"><button class="btn gold" onclick="goView('begin_entry')">Begin Entry</button><button class="btn" onclick="goView('entrant_status_check')">Check Status</button></div></div>
+        <div class="grid"><section class="panel"><div class="panel-head"><h2>Entrant Dashboard</h2><button class="btn gold" onclick="goView('begin_entry')">Continue Entry</button></div>
+          <p class="muted">Confirmation number: <strong style="color:white">${app.applicant.applicationNumber}</strong></p>
           <div class="progress" style="margin-top:18px"><span style="width:${progress}%"></span></div>
           <p class="meta">${progress}% complete</p>
           <div class="steps">
@@ -850,7 +882,8 @@
       }
 
       function applyNowView() {
-        return `<section class="panel"><div class="panel-head"><h2>Student Application Wizard</h2><span class="status review">Step ${app.applicantStep} of 5</span></div>
+        return `<section class="panel"><div class="panel-head"><h2>KCS Entry Form</h2><span class="status review">Step ${app.applicantStep} of 5</span></div>
+          <div class="notice-strip">Complete this entry exactly as it appears on school records. A confirmation number is issued after payment and final submission.</div>
           <div class="steps">
             ${["Eligibility", "Identity", "Guardian", "Academic", "Declaration"].map((label, i) => `<button class="step" data-step="${i + 1}"><div class="step-number">${i + 1}</div><div><strong>${label}</strong><p class="muted">${i + 1 === app.applicantStep ? "Current section" : "Click to edit"}</p></div><span class="status ${i + 1 <= app.applicantStep ? "verified" : "pending"}">${i + 1 <= app.applicantStep ? "Open" : "Locked"}</span></button>`).join("")}
           </div>
@@ -864,6 +897,19 @@
             <label class="field-label" style="grid-column:1/-1">Motivation statement<textarea id="motivation">${app.applicant.motivation}</textarea></label>
           </div>
           <div class="controls" style="margin-top:18px"><button class="btn" id="saveApplicantBtn">Save Draft</button><button class="btn gold" id="nextApplicantStep">Save and Continue</button></div></section>`;
+      }
+
+      function entrantStatusCheckView() {
+        return `<div class="official-banner"><p class="muted">Entrant Status Check</p><h1 class="official-title">Check KCS Entry Status</h1><p class="muted" style="margin-top:12px;max-width:760px">Enter your confirmation number, last name, and year of birth to view your private KCS Opportunity Program status.</p></div>
+          <section class="panel" style="margin-top:20px"><div class="panel-head"><h2>Status Check</h2><span class="status pending">Secure lookup simulation</span></div>
+            <div class="form-grid">
+              <label class="field-label">Confirmation Number<input id="statusConfirmation" value="${app.applicant.applicationNumber}"></label>
+              <label class="field-label">Last Name<input id="statusLastName" value="${app.applicant.lastName}"></label>
+              <label class="field-label">Year of Birth<input id="statusBirthYear" value="2008"></label>
+            </div>
+            <button class="btn gold" style="margin-top:16px" id="statusCheckBtn">Submit</button>
+            <div id="statusCheckResult" class="mini" style="margin-top:16px"><strong>No lookup submitted</strong><p class="muted">Your result will appear here after validation.</p></div>
+          </section>`;
       }
 
       function myDocumentsView() {
@@ -900,8 +946,11 @@
 
       function renderView() {
         if (app.role !== "admin" && !isApplicantView(app.view)) {
-          app.view = "student_portal";
+          app.view = "entry_home";
         }
+        if (app.view === "entry_home") return studentPortalView();
+        if (app.view === "begin_entry") return applyNowView();
+        if (app.view === "entrant_status_check") return entrantStatusCheckView();
         if (app.view === "student_portal") return studentPortalView();
         if (app.view === "apply_now") return applyNowView();
         if (app.view === "my_documents") return myDocumentsView();
@@ -956,6 +1005,19 @@
         if (studentPay) studentPay.onclick = () => { app.applicant.paymentStatus = "successful"; app.payments[0].value += 150; app.activity.unshift("Applicant sandbox payment confirmed"); render(); toast("Payment confirmed and receipt generated"); };
         const resultBtn = document.getElementById("publishResultDemo");
         if (resultBtn) resultBtn.onclick = () => { app.applicant.resultPublished = !app.applicant.resultPublished; app.applicant.result = app.applicant.resultPublished ? "selected" : "pending"; render(); toast(app.applicant.resultPublished ? "Result published for demo" : "Result hidden"); };
+        const statusCheck = document.getElementById("statusCheckBtn");
+        if (statusCheck) statusCheck.onclick = () => {
+          const confirmation = document.getElementById("statusConfirmation").value.trim();
+          const lastName = document.getElementById("statusLastName").value.trim().toLowerCase();
+          const result = document.getElementById("statusCheckResult");
+          if (confirmation === app.applicant.applicationNumber && lastName === app.applicant.lastName.toLowerCase()) {
+            result.innerHTML = `<strong>Entry found</strong><p class="muted">Status: ${app.applicant.paymentStatus === "successful" ? "Submitted and awaiting review" : "Awaiting payment"}.</p><p class="muted">Confirmation Number: ${app.applicant.applicationNumber}</p>`;
+            toast("Entry status found");
+          } else {
+            result.innerHTML = `<strong>No entry found</strong><p class="muted">Check your confirmation number and last name.</p>`;
+            toast("Status check failed");
+          }
+        };
       }
 
       function saveApplicantDraft() {
