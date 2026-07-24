@@ -304,6 +304,15 @@
         height: 270px;
         display: block;
       }
+      .drc-source-map {
+        position: absolute;
+        inset: 8px 12px 22px;
+        width: calc(100% - 24px);
+        height: calc(100% - 30px);
+        object-fit: contain;
+        opacity: .92;
+        filter: sepia(.65) saturate(1.45) hue-rotate(354deg) drop-shadow(0 18px 24px rgba(0,0,0,.28));
+      }
       .drc-outline {
         fill: rgba(255, 217, 106, .1);
         stroke: rgba(255, 217, 106, .58);
@@ -332,6 +341,7 @@
       }
       .province-pin {
         position: absolute;
+        z-index: 2;
         display: grid;
         place-items: center;
         min-width: 32px;
@@ -553,7 +563,7 @@
         </div>
         <div class="role-switch" aria-label="Portal role">
           <button id="studentModeBtn" class="active">Student</button>
-          <button id="adminModeBtn">Admin</button>
+          <button id="adminModeBtn">Admin Login</button>
         </div>
         <nav id="nav"></nav>
       </aside>
@@ -603,6 +613,7 @@
     <script>
       const app = {
         role: "student",
+        adminUnlocked: false,
         view: "student_portal",
         campaign: "2026",
         search: "",
@@ -698,6 +709,14 @@
       function closeNav() { document.body.classList.remove("nav-open"); }
 
       function setRole(role) {
+        if (role === "admin" && !app.adminUnlocked) {
+          const code = window.prompt("Enter administrator access code");
+          if (code !== "KCS-ADMIN-2026") {
+            toast("Admin access denied");
+            return;
+          }
+          app.adminUnlocked = true;
+        }
         app.role = role;
         app.view = role === "admin" ? "dashboard" : "student_portal";
         render();
@@ -773,37 +792,11 @@
           { name: "Nord-Kivu", color: "#c8a85c", x: 86, y: 43, label: "N-KIVU" },
           { name: "South-Kivu", color: "#e8b93f", x: 84, y: 58, label: "S-KIVU" }
         ];
-        const outlinePath = "M39 151 L61 133 L75 111 L102 112 L119 91 L148 97 L166 72 L198 82 L221 56 L253 70 L283 54 L321 70 L352 92 L382 103 L365 134 L372 162 L351 190 L369 222 L344 257 L294 248 L256 227 L224 252 L181 229 L151 235 L121 208 L95 192 L76 168 L47 165 Z";
-        const backgroundCells = [
-          "M82 110 L108 112 L122 91 L151 97 L143 132 L111 146 L94 136 Z",
-          "M151 97 L169 72 L201 82 L190 127 L143 132 Z",
-          "M201 82 L222 55 L258 70 L248 122 L190 127 Z",
-          "M258 70 L284 54 L323 69 L334 106 L293 117 L248 122 Z",
-          "M293 117 L334 106 L321 126 L313 162 L278 160 Z",
-          "M111 146 L143 132 L166 160 L166 198 L130 190 L103 163 Z",
-          "M143 132 L190 127 L205 181 L166 198 L166 160 Z",
-          "M190 127 L248 122 L257 199 L205 181 Z",
-          "M248 122 L278 160 L292 186 L257 199 Z",
-          "M278 160 L313 162 L326 184 L292 186 Z",
-          "M103 163 L130 190 L120 208 L96 192 L76 168 Z",
-          "M130 190 L166 198 L180 226 L152 235 L120 208 Z",
-          "M224 252 L252 222 L292 248 L256 227 Z"
-        ];
         return `<section class="panel"><div class="panel-head"><h2>Applications by Province</h2><span class="muted">Click a province</span></div>
           <div class="province"><div class="map">
-            <svg class="drc-map" viewBox="28 42 370 235" role="img" aria-label="Democratic Republic of Congo map">
-              <defs>
-                <linearGradient id="drcGold" x1="0" x2="1" y1="0" y2="1">
-                  <stop offset="0" stop-color="#ffe38a" stop-opacity=".72"></stop>
-                  <stop offset=".52" stop-color="#f5b82e" stop-opacity=".34"></stop>
-                  <stop offset="1" stop-color="#0b1f35" stop-opacity=".28"></stop>
-                </linearGradient>
-              </defs>
-              <path class="drc-outline" d="${outlinePath}" style="fill:url(#drcGold)"></path>
-              ${backgroundCells.map(path => `<path class="province-boundary" d="${path}"></path>`).join("")}
-            </svg>
+            <img class="drc-source-map" alt="Map outline of the Democratic Republic of the Congo" src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Contour-map_of_the_Democratic_Republic_of_the_Congo.svg">
             ${provinces.map(province => `<button class="province-pin ${province.name === app.selectedProvince ? "active" : ""}" data-province="${province.name}" style="left:${province.x}%;top:${province.y}%">${province.label}</button>`).join("")}
-            <span class="map-note">Simplified DRC operational map for dashboard filtering</span>
+            <span class="map-note">DRC outline map source: Wikimedia Commons. Pins are dashboard filters.</span>
           </div><div class="legend">
             ${provinces.map(province => `<button class="legend-row" data-province="${province.name}"><span><i class="dot" style="background:${province.color}"></i>${province.name}</span><strong>${counts[province.name] || 0}</strong></button>`).join("")}
           </div></div></section>`;
