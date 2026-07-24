@@ -25,7 +25,7 @@
       }
 
       * { box-sizing: border-box; }
-      html, body { min-height: 100%; }
+      html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
       body {
         margin: 0;
         font-family: Inter, system-ui, sans-serif;
@@ -40,8 +40,8 @@
 
       .shell {
         display: flex;
-        width: 100%;
-        min-height: 100vh;
+        width: 100vw;
+        min-height: 100dvh;
         background: rgba(6, 20, 38, 0.86);
       }
 
@@ -123,7 +123,7 @@
         box-shadow: 0 0 34px rgba(245,184,46,.16);
       }
 
-      main { min-width: 0; flex: 1; }
+      main { min-width: 0; width: calc(100vw - 282px); flex: 1; }
       header {
         position: sticky;
         top: 0;
@@ -190,7 +190,8 @@
 
       .icon-btn {
         position: relative;
-        width: 42px;
+        min-width: 42px;
+        padding: 0 10px;
         height: 42px;
       }
 
@@ -347,6 +348,17 @@
       }
       .toast.show { opacity: 1; transform: translateY(0); }
 
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 35;
+        background: rgba(0,0,0,.48);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease;
+      }
+      body.nav-open .backdrop { opacity: 1; pointer-events: auto; }
+
       .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
       .mini { padding: 16px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.035); }
       .hidden { display: none !important; }
@@ -354,7 +366,16 @@
       footer { margin-top: 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 
       @media (max-width: 1180px) {
-        aside { display: none; }
+        aside#sidebar {
+          position: fixed;
+          z-index: 40;
+          left: 0;
+          top: 0;
+          transform: translateX(-104%);
+          transition: transform .22s ease;
+        }
+        body.nav-open aside#sidebar { transform: translateX(0); }
+        main { width: 100vw; }
         .stats, .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
       @media (max-width: 760px) {
@@ -376,7 +397,10 @@
 
       <main>
         <header>
-          <button class="icon-btn" id="refreshBtn" title="Refresh live data">R</button>
+          <div class="controls">
+            <button class="icon-btn" id="menuBtn" title="Open navigation">Menu</button>
+            <button class="icon-btn" id="refreshBtn" title="Refresh live data">R</button>
+          </div>
           <div class="top-actions">
             <button class="icon-btn" id="notificationsBtn" title="Notifications">N<span class="badge" id="notificationCount">3</span></button>
             <button class="icon-btn" id="messagesBtn" title="Messages">M<span class="badge" id="messageCount">5</span></button>
@@ -410,6 +434,7 @@
     </div>
 
     <aside class="drawer" id="drawer" aria-live="polite"></aside>
+    <div class="backdrop" id="backdrop"></div>
     <div class="toast" id="toast"></div>
 
     <script>
@@ -455,6 +480,10 @@
       const icons = { Dashboard: "D", Applications: "A", Payments: "$", Documents: "F", Messages: "M", Students: "S", Guardians: "G", Reviewers: "R", Administrators: "AD", "Roles & Permissions": "RP", Campaigns: "C", "Eligibility Rules": "ER", Selection: "SL", Results: "RS", Announcements: "AN", Settings: "ST", Security: "SC", "Audit Logs": "AL", "Backup & Recovery": "BR", Analytics: "CH", Reports: "RE", Exports: "EX" };
       const labels = { pending: "Pending", under_review: "Under Review", verified: "Verified", eligible: "Eligible", submitted: "Submitted", correction_required: "Correction", selected: "Selected" };
 
+      function slug(value) {
+        return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      }
+
       function money(value) { return "$" + value.toLocaleString(); }
       function statusClass(status) {
         if (["verified", "eligible", "selected", "successful"].includes(status)) return "verified";
@@ -475,15 +504,17 @@
         drawer.classList.add("open");
       }
       function closeDrawer() { document.getElementById("drawer").classList.remove("open"); }
+      function closeNav() { document.body.classList.remove("nav-open"); }
 
       function renderNav() {
         document.getElementById("nav").innerHTML = navGroups.map(([group, items]) => `
           <div class="group">
             <p class="group-title">${group}</p>
-            ${items.map(item => `<button class="nav-item ${item.toLowerCase().replaceAll(" ", "_").replaceAll("&", "and") === app.view ? "active" : ""}" data-view="${item}"><span>${icons[item]}</span>${item}</button>`).join("")}
+            ${items.map(item => `<button class="nav-item ${slug(item) === app.view ? "active" : ""}" data-view="${slug(item)}"><span>${icons[item]}</span>${item}</button>`).join("")}
           </div>`).join("");
         document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => {
-          app.view = btn.dataset.view.toLowerCase().replaceAll(" ", "_").replaceAll("&", "and");
+          app.view = btn.dataset.view;
+          closeNav();
           render();
         }));
       }
@@ -581,6 +612,8 @@
 
       function attachEvents() {
         document.getElementById("campaignSelect").value = app.campaign;
+        document.getElementById("menuBtn").onclick = () => document.body.classList.add("nav-open");
+        document.getElementById("backdrop").onclick = () => { closeNav(); closeDrawer(); };
         document.getElementById("campaignSelect").onchange = e => { app.campaign = e.target.value; toast("Campaign changed to " + e.target.options[e.target.selectedIndex].text); render(); };
         document.getElementById("refreshBtn").onclick = () => { app.monthly = app.monthly.map(v => v + Math.floor(Math.random() * 9)); app.activity.unshift("Live data refreshed at " + new Date().toLocaleTimeString()); render(); toast("Dashboard data refreshed"); };
         document.getElementById("newApplicationBtn").onclick = addApplication;
@@ -602,7 +635,7 @@
         const inline = document.getElementById("newApplicationInline");
         if (inline) inline.onclick = addApplication;
         const generic = document.getElementById("genericAction");
-        if (generic) generic.onclick = () => { app.activity.unshift("New record created in " + app.view.replaceAll("_", " ")); render(); toast("Prototype record created"); };
+        if (generic) generic.onclick = () => { app.activity.unshift("New record created in " + app.view.replace(/_/g, " ")); render(); toast("Prototype record created"); };
       }
 
       function reviewApplication(id) {
