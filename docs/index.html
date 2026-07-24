@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KCS Opportunity Program</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #061426;
+        --panel: #081b30;
+        --sidebar: #031024;
+        --card: #0b1f35;
+        --elevated: #102841;
+        --gold: #f5b82e;
+        --gold-2: #d99c1d;
+        --gold-light: #ffd96a;
+        --cyan: #27c4f4;
+        --success: #32c76a;
+        --warning: #f4b740;
+        --danger: #e5574f;
+        --text: #f7f9fc;
+        --muted: #aebbcd;
+        --border: rgba(255, 255, 255, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 85% -10%, rgba(39, 196, 244, 0.14), transparent 30%),
+          linear-gradient(135deg, #030b18 0%, var(--bg) 48%, #020712 100%);
+      }
+
+      .shell {
+        display: flex;
+        min-height: 100vh;
+        max-width: 1800px;
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        background: rgba(6, 20, 38, 0.82);
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      aside {
+        width: 282px;
+        flex: 0 0 282px;
+        padding: 24px 20px;
+        border-right: 1px solid var(--border);
+        background: rgba(3, 16, 36, 0.96);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 32px;
+      }
+
+      .brand img {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 34px rgba(245, 184, 46, 0.18);
+      }
+
+      .brand strong {
+        display: block;
+        color: var(--gold);
+        font-size: 20px;
+        letter-spacing: 0.08em;
+      }
+
+      .brand span {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .group {
+        margin: 22px 0;
+      }
+
+      .group-title {
+        margin: 0 0 10px;
+        padding-left: 8px;
+        color: rgba(174, 187, 205, 0.75);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        height: 48px;
+        margin-bottom: 6px;
+        padding: 0 12px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: var(--muted);
+        background: transparent;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .nav-item.active {
+        color: white;
+        border-color: rgba(245, 184, 46, 0.4);
+        background: linear-gradient(90deg, rgba(245, 184, 46, 0.45), rgba(217, 156, 29, 0.18));
+        box-shadow: 0 0 34px rgba(245, 184, 46, 0.18);
+      }
+
+      main {
+        min-width: 0;
+        flex: 1;
+      }
+
+      header {
+        height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .content {
+        padding: 26px 32px 36px;
+      }
+
+      .title-row {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 30px;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .date-pill,
+      .icon-btn {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text);
+      }
+
+      .date-pill {
+        padding: 13px 16px;
+        font-size: 14px;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .icon-btn {
+        position: relative;
+        width: 42px;
+        height: 42px;
+      }
+
+      .badge {
+        position: absolute;
+        top: -4px;
+        right: -3px;
+        display: grid;
+        place-items: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--danger);
+        color: white;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .panel,
+      .card {
+        border: 1px solid var(--border);
+        background:
+          linear-gradient(145deg, rgba(16, 40, 65, 0.92), rgba(7, 21, 39, 0.94)),
+          radial-gradient(circle at 10% 0%, rgba(255, 217, 106, 0.08), transparent 42%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 40px rgba(0, 0, 0, 0.22);
+      }
+
+      .card {
+        min-height: 128px;
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .card-inner {
+        display: flex;
+        gap: 16px;
+      }
+
+      .card-icon {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--gold-light);
+        font-size: 22px;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .value {
+        font-size: 25px;
+        font-weight: 800;
+      }
+
+      .meta {
+        margin-top: 8px;
+        color: var(--success);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .panel {
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .panel h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .chart {
+        width: 100%;
+        height: 260px;
+      }
+
+      .province {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 20px;
+      }
+
+      .map {
+        min-height: 230px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        background: #07182b;
+      }
+
+      .map::before {
+        content: "";
+        position: absolute;
+        inset: 30px;
+        border: 1px solid rgba(245, 184, 46, 0.35);
+        border-radius: 44% 39% 46% 43%;
+        background: linear-gradient(135deg, rgba(245, 184, 46, 0.6), rgba(217, 156, 29, 0.25), transparent);
+      }
+
+      .map::after {
+        content: "";
+        position: absolute;
+        right: 14%;
+        top: 12%;
+        width: 96px;
+        height: 104px;
+        border-radius: 45%;
+        background: rgba(255, 217, 106, 0.7);
+        filter: blur(1px);
+      }
+
+      .legend {
+        align-self: center;
+        display: grid;
+        gap: 17px;
+      }
+
+      .legend-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 14px;
+      }
+
+      .dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        margin-right: 10px;
+        border-radius: 50%;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 620px;
+        font-size: 14px;
+      }
+
+      td {
+        padding: 13px 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+
+      td:last-child {
+        text-align: right;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      .status {
+        border-radius: 6px;
+        padding: 5px 9px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .pending {
+        background: rgba(245, 184, 46, 0.18);
+        color: var(--gold-light);
+      }
+
+      .review {
+        background: rgba(39, 196, 244, 0.18);
+        color: var(--cyan);
+      }
+
+      .verified {
+        background: rgba(50, 199, 106, 0.18);
+        color: var(--success);
+      }
+
+      .donut-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 22px;
+        align-items: center;
+      }
+
+      .donut {
+        width: 220px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: conic-gradient(var(--gold) 0 43%, #2d9cdb 43% 64%, var(--danger) 64% 80%, var(--success) 80% 96%, #8a96a6 96% 100%);
+      }
+
+      .donut-center {
+        display: grid;
+        place-items: center;
+        width: 118px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: #07182b;
+        text-align: center;
+      }
+
+      footer {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 1180px) {
+        aside {
+          display: none;
+        }
+
+        .stats,
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        header,
+        .content {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .title-row,
+        .province,
+        .donut-layout,
+        .grid,
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .title-row {
+          display: grid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <div class="brand">
+          <img src="assets/kcs-logo-placeholder.png" alt="Kinshasa Christian School logo" />
+          <div>
+            <strong>KCS</strong>
+            <span>Opportunity Program</span>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-title">MAIN</p>
+          <button class="nav-item active">⌂ Dashboard</button>
+          <button class="nav-item">▣ Applications</button>
+          <button class="nav-item">▤ Payments</button>
+          <button class="nav-item">▥ Documents</button>
+          <button class="nav-item">✉ Messages</button>
+        </div>
+        <div class="group">
+          <p class="group-title">MANAGEMENT</p>
+          <button class="nav-item">◉ Students</button>
+          <button class="nav-item">◎ Guardians</button>
+          <button class="nav-item">◈ Reviewers</button>
+          <button class="nav-item">◍ Administrators</button>
+          <button class="nav-item">◇ Roles & Permissions</button>
+        </div>
+        <div class="group">
+          <p class="group-title">PROGRAM</p>
+          <button class="nav-item">▧ Campaigns</button>
+          <button class="nav-item">☑ Eligibility Rules</button>
+          <button class="nav-item">✦ Selection</button>
+          <button class="nav-item">▦ Results</button>
+        </div>
+        <div class="group">
+          <p class="group-title">SYSTEM</p>
+          <button class="nav-item">⚙ Settings</button>
+          <button class="nav-item">◌ Security</button>
+          <button class="nav-item">☷ Audit Logs</button>
+        </div>
+      </aside>
+
+      <main>
+        <header>
+          <button class="icon-btn">☰</button>
+          <div class="top-actions">
+            <button class="icon-btn">♧<span class="badge">3</span></button>
+            <button class="icon-btn">✉<span class="badge">5</span></button>
+            <button class="icon-btn">●</button>
+          </div>
+        </header>
+
+        <section class="content">
+          <div class="title-row">
+            <div>
+              <h1>Dashboard</h1>
+              <p class="muted">Welcome back, KCS Administration Team</p>
+            </div>
+            <button class="date-pill">July 2026 ▾</button>
+          </div>
+
+          <div class="stats">
+            <article class="card"><div class="card-inner"><div class="card-icon">♙</div><div><h3>Total Applications</h3><div class="value">24,589</div><p class="meta">↑ 12.5% from last month</p></div></div></article>
+            <article class="card"><div class="card-inner"><div class="card-icon">⌛</div><div><h3>Pending Review</h3><div class="value">4,752</div><p class="meta" style="color: var(--gold-light)">Waiting for verification</p></div></div></article>
+            <article class="card"><div class="card-inner"><div class="card-icon">▣</div><div><h3>Total Payments</h3><div class="value">$1,248,750</div><p class="meta">↑ 18.3% from last month</p></div></div></article>
+            <article class="card"><div class="card-inner"><div class="card-icon" style="color: var(--cyan)">◇</div><div><h3>Eligible Applicants</h3><div class="value">8,420</div><p class="meta" style="color: var(--cyan)">Ready for selection pool</p></div></div></article>
+          </div>
+
+          <div class="grid">
+            <section class="panel">
+              <div class="panel-head"><h2>Applications Overview</h2><button class="date-pill">This Year ▾</button></div>
+              <svg class="chart" viewBox="0 0 720 260" role="img" aria-label="Applications overview chart">
+                <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f5b82e" stop-opacity=".48"/><stop offset="1" stop-color="#f5b82e" stop-opacity=".03"/></linearGradient></defs>
+                <g stroke="rgba(255,255,255,.11)"><path d="M50 35H700"/><path d="M50 90H700"/><path d="M50 145H700"/><path d="M50 200H700"/></g>
+                <path d="M60 205 L160 185 L260 145 L370 123 L480 108 L590 78 L690 48 L690 225 L60 225Z" fill="url(#area)" />
+                <path d="M60 205 L160 185 L260 145 L370 123 L480 108 L590 78 L690 48" fill="none" stroke="#f5b82e" stroke-width="3" />
+                <g fill="#f5b82e" stroke="#ffd96a"><circle cx="60" cy="205" r="5"/><circle cx="160" cy="185" r="5"/><circle cx="260" cy="145" r="5"/><circle cx="370" cy="123" r="5"/><circle cx="480" cy="108" r="5"/><circle cx="590" cy="78" r="5"/><circle cx="690" cy="48" r="5"/></g>
+                <g fill="#d5deea" font-size="13"><text x="55" y="248">Jan</text><text x="155" y="248">Feb</text><text x="255" y="248">Mar</text><text x="365" y="248">Apr</text><text x="475" y="248">May</text><text x="585" y="248">Jun</text><text x="685" y="248">Jul</text></g>
+              </svg>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head"><h2>Applications by Province</h2></div>
+              <div class="province">
+                <div class="map"></div>
+                <div class="legend">
+                  <div class="legend-row"><span><i class="dot" style="background: var(--gold-light)"></i>Kinshasa</span><strong>6,245</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: var(--gold)"></i>Haut-Katanga</span><strong>3,456</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: var(--gold-2)"></i>Lualaba</span><strong>2,987</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: #c8a85c"></i>Nord-Kivu</span><strong>2,450</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: #e8b93f"></i>South-Kivu</span><strong>2,230</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: #6c7887"></i>Other</span><strong>7,221</strong></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="grid">
+            <section class="panel">
+              <div class="panel-head"><h2>Recent Applications</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <tbody>
+                    <tr><td><strong>Grace M.</strong></td><td class="muted">grace.muteba@example.com</td><td><span class="status pending">Pending</span></td><td>Jul 26, 2026</td></tr>
+                    <tr><td><strong>Peter K.</strong></td><td class="muted">peter.kabeya@example.com</td><td><span class="status review">Under Review</span></td><td>Jul 26, 2026</td></tr>
+                    <tr><td><strong>Amina T.</strong></td><td class="muted">amina.tshibola@example.com</td><td><span class="status verified">Verified</span></td><td>Jul 25, 2026</td></tr>
+                    <tr><td><strong>David L.</strong></td><td class="muted">david.lubaki@example.com</td><td><span class="status pending">Correction</span></td><td>Jul 25, 2026</td></tr>
+                    <tr><td><strong>John S.</strong></td><td class="muted">john.samba@example.com</td><td><span class="status verified">Eligible</span></td><td>Jul 24, 2026</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head"><h2>Payment Summary</h2></div>
+              <div class="donut-layout">
+                <div class="donut"><div class="donut-center"><span class="muted">Total</span><strong>$1,248,750</strong></div></div>
+                <div class="legend">
+                  <div class="legend-row"><span><i class="dot" style="background: var(--gold)"></i>M-Pesa</span><strong>$542,300&nbsp;&nbsp;43.4%</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: #2d9cdb"></i>Airtel Money</span><strong>$256,120&nbsp;&nbsp;20.5%</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: var(--danger)"></i>Orange Money</span><strong>$198,450&nbsp;&nbsp;15.9%</strong></div>
+                  <div class="legend-row"><span><i class="dot" style="background: var(--success)"></i>Bank Transfer</span><strong>$201,880&nbsp;&nbsp;16.2%</strong></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <footer>
+            This is a private academic opportunity program organized by Kinshasa Christian School. It is not affiliated with the U.S. Government, the U.S. Department of State, the U.S. Embassy, USCIS, or the official Diversity Visa Program.
+          </footer>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
