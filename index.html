@@ -697,6 +697,7 @@
       const app = {
         role: "student",
         adminUnlocked: false,
+        adminCode: localStorage.getItem("kcs-admin-code") || "KCS-ADMIN-2026",
         theme: localStorage.getItem("kcs-theme") || "moon",
         view: "entry_home",
         campaign: "2026",
@@ -795,7 +796,7 @@
       function setRole(role) {
         if (role === "admin" && !app.adminUnlocked) {
           const code = window.prompt("Enter administrator access code");
-          if (code !== "KCS-ADMIN-2026") {
+          if (code !== app.adminCode) {
             toast("Admin access denied");
             return;
           }
@@ -1051,7 +1052,7 @@
         document.getElementById("newApplicationBtn").onclick = addApplication;
         document.getElementById("notificationsBtn").onclick = () => openDrawer("Notifications", app.activity.map(a => `<p class="mini">${a}</p>`).join(""));
         document.getElementById("messagesBtn").onclick = () => openDrawer("Messages", `<p class="mini">3 applicant messages need replies.</p><p class="mini">2 payment confirmations are waiting for finance.</p>`);
-        document.getElementById("adminBtn").onclick = () => openDrawer("KCS Admin", `<p class="mini">Role: Super Administrator</p><p class="mini">Session: local prototype</p>`);
+        document.getElementById("adminBtn").onclick = () => openDrawer("KCS Admin", `<p class="mini">Role: Super Administrator</p><p class="mini">Session: local prototype</p><label class="field-label" style="margin-top:14px">Change admin code<input id="adminCodeInput" value="${app.adminCode}"></label><button class="btn gold" style="margin-top:12px" onclick="changeAdminCode()">Save Admin Code</button>`);
         const search = document.getElementById("searchInput");
         if (search) search.oninput = e => { app.search = e.target.value; render(); };
         const status = document.getElementById("statusFilter");
@@ -1108,6 +1109,17 @@
           if (el) app.applicant[key] = el.value;
         });
         app.activity.unshift("Applicant draft saved");
+      }
+
+      function changeAdminCode() {
+        const input = document.getElementById("adminCodeInput");
+        if (!input || input.value.trim().length < 6) {
+          toast("Admin code must contain at least 6 characters");
+          return;
+        }
+        app.adminCode = input.value.trim();
+        localStorage.setItem("kcs-admin-code", app.adminCode);
+        toast("Admin code updated");
       }
 
       function reviewApplication(id) {
