@@ -28,18 +28,18 @@
       }
 
       body.theme-sun {
-        --bg: #eef9ff;
-        --sidebar: #ffffff;
-        --card: #ffffff;
-        --elevated: #e5f6ff;
+        --bg: #e4f4fb;
+        --sidebar: #eef9fd;
+        --card: #f4fbff;
+        --elevated: #d8eff8;
         --gold: #129fd3;
         --gold-2: #087fb0;
         --gold-light: #075f86;
         --cyan: #129fd3;
         --success: #14884d;
         --danger: #c93f38;
-        --text: #101418;
-        --muted: #4e6472;
+        --text: #0b2735;
+        --muted: #4f6d7b;
         --border: rgba(18, 159, 211, 0.22);
       }
 
@@ -73,9 +73,9 @@
 
       body.theme-sun {
         background:
-          radial-gradient(circle at 82% 0%, rgba(18,159,211,.22), transparent 28%),
-          radial-gradient(circle at 0% 18%, rgba(18,159,211,.24), transparent 26%),
-          linear-gradient(135deg, #f8fdff 0%, #eef9ff 48%, #e5f6ff 100%);
+          radial-gradient(circle at 82% 0%, rgba(18,159,211,.18), transparent 28%),
+          radial-gradient(circle at 0% 18%, rgba(18,159,211,.18), transparent 26%),
+          linear-gradient(135deg, #f1fbff 0%, #e4f4fb 48%, #d8eff8 100%);
       }
 
       button, input, select { font: inherit; }
@@ -88,7 +88,7 @@
         overflow: hidden;
         background: rgba(6, 20, 38, 0.86);
       }
-      body.theme-sun .shell { background: rgba(255,255,255,.72); }
+      body.theme-sun .shell { background: rgba(228,244,251,.82); }
 
       aside {
         position: fixed;
@@ -105,7 +105,7 @@
         box-shadow: 18px 0 45px rgba(0, 0, 0, 0.22);
       }
       body.theme-sun aside {
-        background: rgba(255,255,255,.96);
+        background: rgba(238,249,253,.96);
         box-shadow: 18px 0 45px rgba(18,159,211,.12);
       }
 
@@ -218,7 +218,7 @@
         background: rgba(6, 20, 38, .86);
         backdrop-filter: blur(14px);
       }
-      body.theme-sun header { background: rgba(255,255,255,.78); }
+      body.theme-sun header { background: rgba(238,249,253,.84); }
 
       .content { padding: 26px 32px 34px; }
       .title-row {
@@ -303,9 +303,9 @@
       body.theme-sun .panel,
       body.theme-sun .card {
         background:
-          linear-gradient(145deg, rgba(255,255,255,.94), rgba(229,247,255,.92)),
+          linear-gradient(145deg, rgba(244,251,255,.96), rgba(216,239,248,.9)),
           radial-gradient(circle at 8% 0%, rgba(18,159,211,.12), transparent 40%);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 18px 40px rgba(18,159,211,.12);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 18px 40px rgba(18,159,211,.1);
       }
 
       .stats {
@@ -591,12 +591,20 @@
         background: linear-gradient(135deg, rgba(3,16,36,.96), rgba(11,31,53,.94));
         padding: 22px;
       }
+      body.theme-sun .official-banner {
+        border-color: rgba(18,159,211,.28);
+        background:
+          linear-gradient(135deg, rgba(244,251,255,.98), rgba(216,239,248,.94)),
+          radial-gradient(circle at 88% 0%, rgba(18,159,211,.14), transparent 32%);
+      }
       .official-title {
         margin-top: 10px;
         font-size: clamp(28px, 4vw, 48px);
         line-height: 1.05;
         letter-spacing: 0;
+        color: var(--text);
       }
+      body.theme-sun .official-title { color: #07384e; }
       .notice-strip {
         margin-top: 14px;
         padding: 12px 14px;
@@ -657,7 +665,7 @@
             <button class="icon-btn" id="refreshBtn" title="Refresh live data">R</button>
           </div>
           <div class="top-actions">
-            <button class="icon-btn" id="themeToggleBtn" title="Toggle sun/moon theme">Moon</button>
+            <button class="icon-btn" id="themeToggleBtn" title="Toggle sun/moon theme" aria-label="Toggle sun/moon theme">◐</button>
             <button class="icon-btn" id="notificationsBtn" title="Notifications">N<span class="badge" id="notificationCount">3</span></button>
             <button class="icon-btn" id="messagesBtn" title="Messages">M<span class="badge" id="messageCount">5</span></button>
             <button class="icon-btn" id="adminBtn" title="Admin profile">A</button>
@@ -816,7 +824,10 @@
         document.body.classList.toggle("theme-sun", app.theme === "sun");
         document.body.classList.toggle("theme-moon", app.theme === "moon");
         const button = document.getElementById("themeToggleBtn");
-        if (button) button.textContent = app.theme === "sun" ? "Sun" : "Moon";
+        if (button) {
+          button.textContent = app.theme === "sun" ? "☀" : "◐";
+          button.title = app.theme === "sun" ? "Switch to moon theme" : "Switch to sun theme";
+        }
       }
 
       function toggleTheme() {
