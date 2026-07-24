@@ -9,6 +9,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
       :root {
+        --school-blue: #129fd3;
+        --school-black: #101418;
+        --school-white: #ffffff;
+        --bg: #061426;
+        --sidebar: #031024;
+        --card: #0b1f35;
+        --elevated: #102841;
+        --gold: #f5b82e;
+        --gold-2: #d99c1d;
+        --gold-light: #ffd96a;
+        --cyan: #27c4f4;
+        --success: #32c76a;
+        --danger: #e5574f;
+        --text: #f7f9fc;
+        --muted: #aebbcd;
+        --border: rgba(255, 255, 255, 0.1);
+      }
+
+      body.theme-sun {
+        --bg: #eaf8ff;
+        --sidebar: #ffffff;
+        --card: #ffffff;
+        --elevated: #dff5ff;
+        --gold: #f5b82e;
+        --gold-2: #d99c1d;
+        --gold-light: #8a6200;
+        --cyan: #129fd3;
+        --success: #14884d;
+        --danger: #c93f38;
+        --text: #101418;
+        --muted: #4e6472;
+        --border: rgba(18, 159, 211, 0.22);
+      }
+
+      body.theme-moon {
         --bg: #061426;
         --sidebar: #031024;
         --card: #0b1f35;
@@ -31,8 +66,16 @@
         font-family: Inter, system-ui, sans-serif;
         color: var(--text);
         background:
-          radial-gradient(circle at 80% -10%, rgba(39, 196, 244, 0.15), transparent 30%),
+          radial-gradient(circle at 80% -10%, rgba(18, 159, 211, 0.18), transparent 30%),
+          radial-gradient(circle at 12% 8%, rgba(245, 184, 46, 0.14), transparent 24%),
           linear-gradient(135deg, #020814 0%, var(--bg) 50%, #020711 100%);
+      }
+
+      body.theme-sun {
+        background:
+          radial-gradient(circle at 82% 0%, rgba(245,184,46,.32), transparent 28%),
+          radial-gradient(circle at 0% 18%, rgba(18,159,211,.24), transparent 26%),
+          linear-gradient(135deg, #f8fdff 0%, #eaf8ff 48%, #dff5ff 100%);
       }
 
       button, input, select { font: inherit; }
@@ -45,6 +88,7 @@
         overflow: hidden;
         background: rgba(6, 20, 38, 0.86);
       }
+      body.theme-sun .shell { background: rgba(255,255,255,.72); }
 
       aside {
         position: fixed;
@@ -60,6 +104,10 @@
         background: rgba(3, 16, 36, 0.98);
         box-shadow: 18px 0 45px rgba(0, 0, 0, 0.22);
       }
+      body.theme-sun aside {
+        background: rgba(255,255,255,.96);
+        box-shadow: 18px 0 45px rgba(18,159,211,.12);
+      }
 
       .brand {
         display: flex;
@@ -74,7 +122,7 @@
         border-radius: 50%;
         background: white;
         border: 1px solid rgba(255,255,255,.2);
-        box-shadow: 0 0 34px rgba(245,184,46,.18);
+        box-shadow: 0 0 34px rgba(18,159,211,.2), 0 0 22px rgba(245,184,46,.16);
       }
 
       .brand strong {
@@ -170,6 +218,7 @@
         background: rgba(6, 20, 38, .86);
         backdrop-filter: blur(14px);
       }
+      body.theme-sun header { background: rgba(255,255,255,.78); }
 
       .content { padding: 26px 32px 34px; }
       .title-row {
@@ -250,6 +299,13 @@
           linear-gradient(145deg, rgba(16,40,65,.94), rgba(7,21,39,.96)),
           radial-gradient(circle at 10% 0%, rgba(255,217,106,.08), transparent 42%);
         box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 40px rgba(0,0,0,.22);
+      }
+      body.theme-sun .panel,
+      body.theme-sun .card {
+        background:
+          linear-gradient(145deg, rgba(255,255,255,.94), rgba(229,247,255,.92)),
+          radial-gradient(circle at 8% 0%, rgba(245,184,46,.14), transparent 40%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 18px 40px rgba(18,159,211,.12);
       }
 
       .stats {
@@ -601,6 +657,7 @@
             <button class="icon-btn" id="refreshBtn" title="Refresh live data">R</button>
           </div>
           <div class="top-actions">
+            <button class="icon-btn" id="themeToggleBtn" title="Toggle sun/moon theme">Moon</button>
             <button class="icon-btn" id="notificationsBtn" title="Notifications">N<span class="badge" id="notificationCount">3</span></button>
             <button class="icon-btn" id="messagesBtn" title="Messages">M<span class="badge" id="messageCount">5</span></button>
             <button class="icon-btn" id="adminBtn" title="Admin profile">A</button>
@@ -640,6 +697,7 @@
       const app = {
         role: "student",
         adminUnlocked: false,
+        theme: localStorage.getItem("kcs-theme") || "moon",
         view: "entry_home",
         campaign: "2026",
         search: "",
@@ -751,6 +809,20 @@
 
       function isApplicantView(view) {
         return ["entry_home", "begin_entry", "entrant_status_check", "student_portal", "apply_now", "my_documents", "pay_fee", "application_status", "my_result", "messages", "announcements", "admin_sign_in"].includes(view);
+      }
+
+      function applyTheme() {
+        document.body.classList.toggle("theme-sun", app.theme === "sun");
+        document.body.classList.toggle("theme-moon", app.theme === "moon");
+        const button = document.getElementById("themeToggleBtn");
+        if (button) button.textContent = app.theme === "sun" ? "Sun" : "Moon";
+      }
+
+      function toggleTheme() {
+        app.theme = app.theme === "sun" ? "moon" : "sun";
+        localStorage.setItem("kcs-theme", app.theme);
+        applyTheme();
+        toast(app.theme === "sun" ? "Sun theme applied" : "Moon theme applied");
       }
 
       function renderNav() {
@@ -968,6 +1040,7 @@
         document.getElementById("adminModeBtn").classList.toggle("active", app.role === "admin");
         document.getElementById("studentModeBtn").onclick = () => setRole("student");
         document.getElementById("adminModeBtn").onclick = () => setRole("admin");
+        document.getElementById("themeToggleBtn").onclick = toggleTheme;
         document.getElementById("campaignSelect").classList.toggle("hidden", app.role !== "admin");
         document.getElementById("newApplicationBtn").classList.toggle("hidden", app.role !== "admin");
         document.getElementById("campaignSelect").value = app.campaign;
@@ -1060,6 +1133,7 @@
       }
       function goView(view) { app.view = view; render(); }
       function render() {
+        applyTheme();
         renderNav();
         const title = app.view.split("_").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
         document.getElementById("pageTitle").textContent = title;
