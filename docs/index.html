@@ -394,6 +394,66 @@
 
       .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
       .mini { padding: 16px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.035); }
+      .steps { display: grid; gap: 10px; margin-top: 16px; }
+      .step {
+        display: grid;
+        grid-template-columns: 38px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(255,255,255,.035);
+      }
+      .step-number {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(245,184,46,.16);
+        color: var(--gold-light);
+        font-weight: 850;
+      }
+      .progress {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255,255,255,.08);
+      }
+      .progress span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--gold), var(--cyan));
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .field-label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 750; }
+      .field-label input, .field-label select, .field-label textarea {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255,255,255,.04);
+        color: var(--text);
+        padding: 10px 12px;
+        outline: none;
+      }
+      .field-label textarea { min-height: 94px; resize: vertical; }
+      .upload-tile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border: 1px dashed rgba(255,255,255,.18);
+        border-radius: 10px;
+        background: rgba(255,255,255,.03);
+      }
       .hidden { display: none !important; }
 
       footer { margin-top: 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
@@ -414,6 +474,7 @@
       @media (max-width: 760px) {
         header, .content { padding-left: 16px; padding-right: 16px; }
         .title-row, .province, .donut-layout, .grid, .stats, .mini-grid { display: grid; grid-template-columns: 1fr; }
+        .form-grid { grid-template-columns: 1fr; }
         .donut { margin: 0 auto; }
       }
     </style>
@@ -499,10 +560,33 @@
           { name: "Orange Money", value: 1650, color: "#e5574f" },
           { name: "Bank Transfer", value: 2250, color: "#32c76a" },
           { name: "Other", value: 450, color: "#8a96a6" }
-        ]
+        ],
+        applicantStep: 1,
+        applicant: {
+          firstName: "Grace",
+          lastName: "Muteba",
+          registration: "KCS-STD-2026-0142",
+          className: "Grade 12",
+          province: "Kinshasa",
+          email: "grace.muteba@example.com",
+          phone: "+243 810 000 142",
+          guardian: "Marie Muteba",
+          motivation: "I want to pursue computer science and return to serve my community.",
+          documents: {
+            photo: true,
+            studentId: true,
+            reportCard: false,
+            guardianConsent: false
+          },
+          paymentStatus: "not_started",
+          applicationNumber: "KCS-2026-000001",
+          resultPublished: false,
+          result: "pending"
+        }
       };
 
       const navGroups = [
+        ["APPLICANT", ["Student Portal", "Apply Now", "My Documents", "Pay Fee", "Application Status", "My Result"]],
         ["MAIN", ["Dashboard", "Applications", "Payments", "Documents", "Messages"]],
         ["MANAGEMENT", ["Students", "Guardians", "Reviewers", "Administrators", "Roles & Permissions"]],
         ["PROGRAM", ["Campaigns", "Eligibility Rules", "Selection", "Results", "Announcements"]],
@@ -510,7 +594,7 @@
         ["REPORTS", ["Analytics", "Reports", "Exports"]]
       ];
 
-      const icons = { Dashboard: "D", Applications: "A", Payments: "$", Documents: "F", Messages: "M", Students: "S", Guardians: "G", Reviewers: "R", Administrators: "AD", "Roles & Permissions": "RP", Campaigns: "C", "Eligibility Rules": "ER", Selection: "SL", Results: "RS", Announcements: "AN", Settings: "ST", Security: "SC", "Audit Logs": "AL", "Backup & Recovery": "BR", Analytics: "CH", Reports: "RE", Exports: "EX" };
+      const icons = { "Student Portal": "SP", "Apply Now": "+", "My Documents": "MD", "Pay Fee": "$", "Application Status": "AS", "My Result": "MR", Dashboard: "D", Applications: "A", Payments: "$", Documents: "F", Messages: "M", Students: "S", Guardians: "G", Reviewers: "R", Administrators: "AD", "Roles & Permissions": "RP", Campaigns: "C", "Eligibility Rules": "ER", Selection: "SL", Results: "RS", Announcements: "AN", Settings: "ST", Security: "SC", "Audit Logs": "AL", "Backup & Recovery": "BR", Analytics: "CH", Reports: "RE", Exports: "EX" };
       const labels = { pending: "Pending", under_review: "Under Review", verified: "Verified", eligible: "Eligible", submitted: "Submitted", correction_required: "Correction", selected: "Selected" };
 
       function slug(value) {
@@ -657,11 +741,82 @@
         return `${renderStats()}<div class="grid"><section class="panel"><div class="panel-head"><h2>Applications Overview</h2><button class="btn" id="trendBtn">Add Week</button></div>${lineChart()}</section>${provincePanel()}</div><div class="grid"><section class="panel"><div class="panel-head"><h2>Recent Applications</h2><button class="btn" onclick="goView('applications')">View all</button></div>${applicationsTable(5)}</section>${paymentPanel()}</div><div class="mini-grid">${app.activity.map(item => `<div class="mini"><strong>Activity</strong><p class="muted">${item}</p></div>`).join("")}</div>`;
       }
 
+      function applicantProgress() {
+        const docs = Object.values(app.applicant.documents).filter(Boolean).length;
+        let score = 20 + docs * 12;
+        if (app.applicant.paymentStatus === "successful") score += 22;
+        if (app.applicantStep >= 4) score += 10;
+        return Math.min(score, 100);
+      }
+
+      function studentPortalView() {
+        const progress = applicantProgress();
+        return `<div class="grid"><section class="panel"><div class="panel-head"><h2>Welcome, ${app.applicant.firstName}</h2><button class="btn gold" onclick="goView('apply_now')">Continue Application</button></div>
+          <p class="muted">Application number: <strong style="color:white">${app.applicant.applicationNumber}</strong></p>
+          <div class="progress" style="margin-top:18px"><span style="width:${progress}%"></span></div>
+          <p class="meta">${progress}% complete</p>
+          <div class="steps">
+            ${["Eligibility checked", "Identity information saved", "Documents uploaded", "Application fee paid", "Final submission ready"].map((label, i) => `<div class="step"><div class="step-number">${i + 1}</div><div><strong>${label}</strong><p class="muted">${i + 1 <= app.applicantStep ? "Completed or in progress" : "Waiting"}</p></div><span class="status ${i + 1 <= app.applicantStep ? "verified" : "pending"}">${i + 1 <= app.applicantStep ? "OK" : "Next"}</span></div>`).join("")}
+          </div></section>
+          <section class="panel"><h2>Next Required Action</h2><div class="mini" style="margin-top:16px"><strong>${app.applicant.paymentStatus === "successful" ? "Review and submit" : "Pay application fee"}</strong><p class="muted">${app.applicant.paymentStatus === "successful" ? "Your payment is confirmed. Review your details before final submission." : "Choose a supported Mobile Money or bank option to complete the application."}</p></div><button class="btn gold" style="margin-top:14px" onclick="goView('${app.applicant.paymentStatus === "successful" ? "application_status" : "pay_fee"}')">${app.applicant.paymentStatus === "successful" ? "View Status" : "Pay Now"}</button></section></div>`;
+      }
+
+      function applyNowView() {
+        return `<section class="panel"><div class="panel-head"><h2>Student Application Wizard</h2><span class="status review">Step ${app.applicantStep} of 5</span></div>
+          <div class="steps">
+            ${["Eligibility", "Identity", "Guardian", "Academic", "Declaration"].map((label, i) => `<button class="step" data-step="${i + 1}"><div class="step-number">${i + 1}</div><div><strong>${label}</strong><p class="muted">${i + 1 === app.applicantStep ? "Current section" : "Click to edit"}</p></div><span class="status ${i + 1 <= app.applicantStep ? "verified" : "pending"}">${i + 1 <= app.applicantStep ? "Open" : "Locked"}</span></button>`).join("")}
+          </div>
+          <div class="form-grid" style="margin-top:18px">
+            <label class="field-label">First name<input id="firstName" value="${app.applicant.firstName}"></label>
+            <label class="field-label">Last name<input id="lastName" value="${app.applicant.lastName}"></label>
+            <label class="field-label">Student registration<input id="registration" value="${app.applicant.registration}"></label>
+            <label class="field-label">Class<select id="className"><option ${app.applicant.className === "Grade 12" ? "selected" : ""}>Grade 12</option><option>Terminale</option></select></label>
+            <label class="field-label">Province<input id="appProvince" value="${app.applicant.province}"></label>
+            <label class="field-label">Phone<input id="phone" value="${app.applicant.phone}"></label>
+            <label class="field-label" style="grid-column:1/-1">Motivation statement<textarea id="motivation">${app.applicant.motivation}</textarea></label>
+          </div>
+          <div class="controls" style="margin-top:18px"><button class="btn" id="saveApplicantBtn">Save Draft</button><button class="btn gold" id="nextApplicantStep">Save and Continue</button></div></section>`;
+      }
+
+      function myDocumentsView() {
+        const docs = [["photo", "Passport-style photo"], ["studentId", "Student ID card"], ["reportCard", "Latest report card"], ["guardianConsent", "Guardian consent"]];
+        return `<section class="panel"><div class="panel-head"><h2>Required Documents</h2><span class="muted">Private upload simulation</span></div>
+          <div class="steps">${docs.map(([key, label]) => `<div class="upload-tile"><div><strong>${label}</strong><p class="muted">${app.applicant.documents[key] ? "Uploaded and waiting for verification" : "Missing document"}</p></div><span class="status ${app.applicant.documents[key] ? "verified" : "pending"}">${app.applicant.documents[key] ? "Uploaded" : "Missing"}</span><button class="btn" data-doc="${key}">${app.applicant.documents[key] ? "Replace" : "Upload"}</button></div>`).join("")}</div></section>`;
+      }
+
+      function payFeeView() {
+        return `<div class="grid"><section class="panel"><div class="panel-head"><h2>Application Fee</h2><span class="status ${statusClass(app.applicant.paymentStatus)}">${app.applicant.paymentStatus.replace(/_/g, " ")}</span></div>
+          <div class="mini"><strong>Amount due</strong><div class="value">$150</div><p class="muted">Sandbox payment only. Real production payment will require verified provider webhooks.</p></div>
+          <div class="form-grid" style="margin-top:16px"><label class="field-label">Provider<select id="studentPaymentProvider"><option>M-Pesa</option><option>Airtel Money</option><option>Orange Money</option><option>Bank Transfer</option></select></label><label class="field-label">Payment phone/reference<input id="studentPaymentRef" value="${app.applicant.phone}"></label></div>
+          <button class="btn gold" style="margin-top:16px" id="studentPayBtn">Pay in Sandbox</button></section>
+          <section class="panel"><h2>Payment Safety</h2><div class="steps"><div class="step"><div class="step-number">1</div><div><strong>No browser-only confirmation</strong><p class="muted">Production payments must be confirmed by a secure server webhook.</p></div></div><div class="step"><div class="step-number">2</div><div><strong>Receipt generated</strong><p class="muted">After payment, the student receives a receipt and application confirmation.</p></div></div></div></section></div>`;
+      }
+
+      function applicationStatusView() {
+        return `<section class="panel"><div class="panel-head"><h2>Application Status</h2><span class="status ${app.applicant.paymentStatus === "successful" ? "verified" : "pending"}">${app.applicant.paymentStatus === "successful" ? "Submitted" : "Awaiting payment"}</span></div>
+          <div class="steps">${["Account created", "Email verified", "Documents uploaded", "Payment confirmed", "Application submitted", "Review started", "Eligibility confirmed", "Result published"].map((item, i) => {
+            const done = i < (app.applicant.paymentStatus === "successful" ? 5 : 3);
+            return `<div class="step"><div class="step-number">${i + 1}</div><div><strong>${item}</strong><p class="muted">${done ? "Completed" : "Pending"}</p></div><span class="status ${done ? "verified" : "pending"}">${done ? "Done" : "Wait"}</span></div>`;
+          }).join("")}</div></section>`;
+      }
+
+      function myResultView() {
+        return `<section class="panel"><div class="panel-head"><h2>Secure Result</h2><button class="btn" id="publishResultDemo">Toggle Published Result</button></div>
+          ${app.applicant.resultPublished ? `<div class="mini"><strong>Result available</strong><p class="muted">For privacy, results are visible only after secure login.</p><div class="value">${app.applicant.result === "selected" ? "Selected" : "Not selected yet"}</div></div>` : `<div class="mini"><strong>Result not published</strong><p class="muted">The school has not published official results for this campaign.</p></div>`}
+        </section>`;
+      }
+
       function genericView(title) {
         return `${renderStats()}<div class="grid"><section class="panel"><div class="panel-head"><h2>${title} Workspace</h2><button class="btn gold" id="genericAction">Create Record</button></div><p class="muted">This module is interactive in the prototype: actions update the live activity feed and keep the same KCS dashboard language.</p><div class="mini-grid"><div class="mini"><strong>Queue</strong><div class="value">${Math.floor(Math.random()*20)+4}</div></div><div class="mini"><strong>Approved</strong><div class="value">${Math.floor(Math.random()*18)+3}</div></div><div class="mini"><strong>Alerts</strong><div class="value">${Math.floor(Math.random()*6)+1}</div></div></div></section><section class="panel"><h2>Recent Activity</h2><div class="legend" style="margin-top:18px">${app.activity.map(a => `<div class="legend-row"><span>${a}</span></div>`).join("")}</div></section></div>`;
       }
 
       function renderView() {
+        if (app.view === "student_portal") return studentPortalView();
+        if (app.view === "apply_now") return applyNowView();
+        if (app.view === "my_documents") return myDocumentsView();
+        if (app.view === "pay_fee") return payFeeView();
+        if (app.view === "application_status") return applicationStatusView();
+        if (app.view === "my_result") return myResultView();
         if (app.view === "dashboard") return dashboardView();
         if (app.view === "applications") return `${renderStats()}<section class="panel" style="margin-top:20px"><div class="panel-head"><h2>Application Review Center</h2><button class="btn gold" id="newApplicationInline">Add Applicant</button></div>${applicationsTable()}</section>`;
         if (app.view === "payments") return `<div class="grid">${paymentPanel()}<section class="panel"><h2>Payment Reconciliation</h2><div class="mini-grid"><div class="mini"><strong>Successful</strong><div class="value">${app.applications.filter(a=>a.payment==="successful").length}</div></div><div class="mini"><strong>Processing</strong><div class="value">${app.applications.filter(a=>a.payment==="processing").length}</div></div><div class="mini"><strong>Failed</strong><div class="value">${app.applications.filter(a=>a.payment==="failed").length}</div></div></div></section></div><section class="panel" style="margin-top:20px">${applicationsTable()}</section>`;
@@ -694,6 +849,33 @@
         if (inline) inline.onclick = addApplication;
         const generic = document.getElementById("genericAction");
         if (generic) generic.onclick = () => { app.activity.unshift("New record created in " + app.view.replace(/_/g, " ")); render(); toast("Prototype record created"); };
+        document.querySelectorAll("[data-step]").forEach(btn => btn.onclick = () => { app.applicantStep = Number(btn.dataset.step); render(); toast("Application step opened"); });
+        const saveApplicant = document.getElementById("saveApplicantBtn");
+        if (saveApplicant) saveApplicant.onclick = saveApplicantDraft;
+        const nextStep = document.getElementById("nextApplicantStep");
+        if (nextStep) nextStep.onclick = () => { saveApplicantDraft(); app.applicantStep = Math.min(5, app.applicantStep + 1); render(); toast("Draft saved"); };
+        document.querySelectorAll("[data-doc]").forEach(btn => btn.onclick = () => { app.applicant.documents[btn.dataset.doc] = true; app.activity.unshift("Applicant uploaded " + btn.dataset.doc); render(); toast("Document uploaded"); });
+        const studentPay = document.getElementById("studentPayBtn");
+        if (studentPay) studentPay.onclick = () => { app.applicant.paymentStatus = "successful"; app.payments[0].value += 150; app.activity.unshift("Applicant sandbox payment confirmed"); render(); toast("Payment confirmed and receipt generated"); };
+        const resultBtn = document.getElementById("publishResultDemo");
+        if (resultBtn) resultBtn.onclick = () => { app.applicant.resultPublished = !app.applicant.resultPublished; app.applicant.result = app.applicant.resultPublished ? "selected" : "pending"; render(); toast(app.applicant.resultPublished ? "Result published for demo" : "Result hidden"); };
+      }
+
+      function saveApplicantDraft() {
+        const fields = [
+          ["firstName", "firstName"],
+          ["lastName", "lastName"],
+          ["registration", "registration"],
+          ["className", "className"],
+          ["appProvince", "province"],
+          ["phone", "phone"],
+          ["motivation", "motivation"]
+        ];
+        fields.forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el) app.applicant[key] = el.value;
+        });
+        app.activity.unshift("Applicant draft saved");
       }
 
       function reviewApplication(id) {
