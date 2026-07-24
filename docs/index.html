@@ -10,7 +10,6 @@
     <style>
       :root {
         --bg: #061426;
-        --panel: #081b30;
         --sidebar: #031024;
         --card: #0b1f35;
         --elevated: #102841;
@@ -19,50 +18,51 @@
         --gold-light: #ffd96a;
         --cyan: #27c4f4;
         --success: #32c76a;
-        --warning: #f4b740;
         --danger: #e5574f;
         --text: #f7f9fc;
         --muted: #aebbcd;
         --border: rgba(255, 255, 255, 0.1);
       }
 
-      * {
-        box-sizing: border-box;
-      }
-
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
       body {
         margin: 0;
-        min-height: 100vh;
         font-family: Inter, system-ui, sans-serif;
         color: var(--text);
         background:
-          radial-gradient(circle at 85% -10%, rgba(39, 196, 244, 0.14), transparent 30%),
-          linear-gradient(135deg, #030b18 0%, var(--bg) 48%, #020712 100%);
+          radial-gradient(circle at 80% -10%, rgba(39, 196, 244, 0.15), transparent 30%),
+          linear-gradient(135deg, #020814 0%, var(--bg) 50%, #020711 100%);
       }
+
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
 
       .shell {
         display: flex;
+        width: 100%;
         min-height: 100vh;
-        max-width: 1800px;
-        margin: 0 auto;
-        border: 1px solid var(--border);
-        background: rgba(6, 20, 38, 0.82);
-        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+        background: rgba(6, 20, 38, 0.86);
       }
 
       aside {
+        position: sticky;
+        top: 0;
         width: 282px;
+        height: 100vh;
         flex: 0 0 282px;
-        padding: 24px 20px;
+        overflow-y: auto;
+        padding: 24px 18px;
         border-right: 1px solid var(--border);
-        background: rgba(3, 16, 36, 0.96);
+        background: rgba(3, 16, 36, 0.98);
+        box-shadow: 18px 0 45px rgba(0, 0, 0, 0.22);
       }
 
       .brand {
         display: flex;
         align-items: center;
         gap: 14px;
-        margin-bottom: 32px;
+        margin: 0 4px 30px;
       }
 
       .brand img {
@@ -70,35 +70,32 @@
         height: 58px;
         border-radius: 50%;
         background: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 0 34px rgba(245, 184, 46, 0.18);
+        border: 1px solid rgba(255,255,255,.2);
+        box-shadow: 0 0 34px rgba(245,184,46,.18);
       }
 
       .brand strong {
         display: block;
         color: var(--gold);
         font-size: 20px;
-        letter-spacing: 0.08em;
+        letter-spacing: .08em;
       }
 
       .brand span {
         color: var(--muted);
         font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.22em;
+        font-weight: 700;
+        letter-spacing: .22em;
         text-transform: uppercase;
       }
 
-      .group {
-        margin: 22px 0;
-      }
-
+      .group { margin: 22px 0; }
       .group-title {
         margin: 0 0 10px;
         padding-left: 8px;
-        color: rgba(174, 187, 205, 0.75);
+        color: rgba(174,187,205,.75);
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
       }
 
       .nav-item {
@@ -106,80 +103,89 @@
         align-items: center;
         gap: 12px;
         width: 100%;
-        height: 48px;
+        min-height: 46px;
         margin-bottom: 6px;
         padding: 0 12px;
         border: 1px solid transparent;
         border-radius: 8px;
         color: var(--muted);
         background: transparent;
+        text-align: left;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 650;
       }
 
+      .nav-item:hover { border-color: var(--border); background: rgba(255,255,255,.045); color: white; }
       .nav-item.active {
         color: white;
-        border-color: rgba(245, 184, 46, 0.4);
-        background: linear-gradient(90deg, rgba(245, 184, 46, 0.45), rgba(217, 156, 29, 0.18));
-        box-shadow: 0 0 34px rgba(245, 184, 46, 0.18);
+        border-color: rgba(245,184,46,.42);
+        background: linear-gradient(90deg, rgba(245,184,46,.44), rgba(217,156,29,.18));
+        box-shadow: 0 0 34px rgba(245,184,46,.16);
       }
 
-      main {
-        min-width: 0;
-        flex: 1;
-      }
-
+      main { min-width: 0; flex: 1; }
       header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
         height: 66px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0 32px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+        background: rgba(6, 20, 38, .86);
+        backdrop-filter: blur(14px);
       }
 
-      .content {
-        padding: 26px 32px 36px;
-      }
-
+      .content { padding: 26px 32px 34px; }
       .title-row {
         display: flex;
-        align-items: end;
         justify-content: space-between;
-        gap: 20px;
-        margin-bottom: 24px;
+        align-items: flex-end;
+        gap: 18px;
+        margin-bottom: 22px;
       }
 
-      h1 {
-        margin: 0;
-        font-size: 30px;
+      h1, h2, h3, p { margin: 0; }
+      h1 { font-size: clamp(24px, 2.4vw, 34px); }
+      h2 { font-size: 18px; }
+      h3 { font-size: 14px; font-weight: 650; }
+      .muted { color: var(--muted); }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
       }
 
-      p {
-        margin: 0;
-      }
-
-      .muted {
-        color: var(--muted);
-      }
-
-      .date-pill,
-      .icon-btn {
+      .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+      .field, .btn, .icon-btn, .select {
         border: 1px solid var(--border);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.035);
+        background: rgba(255,255,255,.04);
         color: var(--text);
       }
 
-      .date-pill {
-        padding: 13px 16px;
-        font-size: 14px;
+      .field { width: min(360px, 100%); height: 42px; padding: 0 13px; outline: none; }
+      .field:focus, .select:focus { border-color: rgba(245,184,46,.55); box-shadow: 0 0 0 3px rgba(245,184,46,.12); }
+      .select { height: 42px; padding: 0 12px; }
+      .select option { color: #061426; }
+
+      .btn {
+        min-height: 42px;
+        padding: 0 14px;
+        font-weight: 750;
       }
 
-      .top-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+      .btn.gold {
+        color: #07101d;
+        border-color: rgba(255,217,106,.55);
+        background: linear-gradient(135deg, var(--gold-light), var(--gold));
+        box-shadow: 0 10px 28px rgba(245,184,46,.18);
       }
 
       .icon-btn {
@@ -191,7 +197,7 @@
       .badge {
         position: absolute;
         top: -4px;
-        right: -3px;
+        right: -4px;
         display: grid;
         place-items: center;
         min-width: 20px;
@@ -204,199 +210,99 @@
         font-weight: 800;
       }
 
+      .panel, .card {
+        border: 1px solid var(--border);
+        background:
+          linear-gradient(145deg, rgba(16,40,65,.94), rgba(7,21,39,.96)),
+          radial-gradient(circle at 10% 0%, rgba(255,217,106,.08), transparent 42%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 40px rgba(0,0,0,.22);
+      }
+
       .stats {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 16px;
       }
 
-      .panel,
-      .card {
-        border: 1px solid var(--border);
-        background:
-          linear-gradient(145deg, rgba(16, 40, 65, 0.92), rgba(7, 21, 39, 0.94)),
-          radial-gradient(circle at 10% 0%, rgba(255, 217, 106, 0.08), transparent 42%);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 40px rgba(0, 0, 0, 0.22);
-      }
-
-      .card {
-        min-height: 128px;
-        border-radius: 12px;
-        padding: 20px;
-      }
-
-      .card-inner {
-        display: flex;
-        gap: 16px;
-      }
-
+      .card { min-height: 128px; border-radius: 12px; padding: 20px; }
+      .card-inner { display: flex; gap: 16px; align-items: flex-start; }
       .card-icon {
         display: grid;
         place-items: center;
         width: 48px;
         height: 48px;
         flex: 0 0 48px;
-        border-radius: 12px;
         border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.045);
+        border-radius: 12px;
+        background: rgba(255,255,255,.045);
         color: var(--gold-light);
-        font-size: 22px;
-      }
-
-      .card h3 {
-        margin: 0 0 8px;
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .value {
-        font-size: 25px;
+        font-size: 19px;
         font-weight: 800;
       }
 
-      .meta {
-        margin-top: 8px;
-        color: var(--success);
-        font-size: 12px;
-        font-weight: 600;
-      }
+      .value { margin-top: 8px; font-size: 25px; font-weight: 850; letter-spacing: .01em; }
+      .meta { margin-top: 8px; color: var(--success); font-size: 12px; font-weight: 700; }
 
-      .grid {
-        display: grid;
-        grid-template-columns: 1.1fr 1fr;
-        gap: 20px;
-        margin-top: 20px;
-      }
+      .grid { display: grid; grid-template-columns: 1.12fr 1fr; gap: 20px; margin-top: 20px; }
+      .panel { border-radius: 12px; padding: 20px; }
+      .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
 
-      .panel {
-        border-radius: 12px;
-        padding: 20px;
-      }
-
-      .panel-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-      }
-
-      .panel h2 {
-        margin: 0;
-        font-size: 18px;
-      }
-
-      .chart {
-        width: 100%;
-        height: 260px;
-      }
-
-      .province {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 20px;
-      }
-
+      .chart { width: 100%; height: 260px; overflow: visible; }
+      .province { display: grid; grid-template-columns: 1.08fr .92fr; gap: 20px; }
       .map {
-        min-height: 230px;
+        min-height: 234px;
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255,255,255,.06);
         border-radius: 8px;
         background: #07182b;
       }
-
-      .map::before {
-        content: "";
+      .map-shape {
         position: absolute;
-        inset: 30px;
-        border: 1px solid rgba(245, 184, 46, 0.35);
+        border: 1px solid rgba(245,184,46,.38);
         border-radius: 44% 39% 46% 43%;
-        background: linear-gradient(135deg, rgba(245, 184, 46, 0.6), rgba(217, 156, 29, 0.25), transparent);
+        background: linear-gradient(135deg, rgba(245,184,46,.58), rgba(217,156,29,.25), transparent);
+        transition: transform .25s ease, filter .25s ease;
       }
+      .map-shape.hot { filter: brightness(1.35); box-shadow: 0 0 28px rgba(255,217,106,.22); }
 
-      .map::after {
-        content: "";
-        position: absolute;
-        right: 14%;
-        top: 12%;
-        width: 96px;
-        height: 104px;
-        border-radius: 45%;
-        background: rgba(255, 217, 106, 0.7);
-        filter: blur(1px);
-      }
-
-      .legend {
-        align-self: center;
-        display: grid;
-        gap: 17px;
-      }
-
+      .legend { align-self: center; display: grid; gap: 15px; }
       .legend-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
+        border: 0;
+        color: var(--text);
+        background: transparent;
+        text-align: left;
         font-size: 14px;
       }
+      .legend-row:hover { color: var(--gold-light); }
+      .dot { display: inline-block; width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; }
 
-      .dot {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        margin-right: 10px;
-        border-radius: 50%;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 620px;
-        font-size: 14px;
-      }
-
-      td {
-        padding: 13px 12px;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
-      }
-
-      td:last-child {
-        text-align: right;
-      }
-
-      .table-wrap {
-        overflow-x: auto;
-      }
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; min-width: 700px; border-collapse: collapse; font-size: 14px; }
+      th, td { padding: 13px 12px; border-top: 1px solid rgba(255,255,255,.07); text-align: left; }
+      th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+      td:last-child, th:last-child { text-align: right; }
+      tbody tr { transition: background .18s ease; }
+      tbody tr:hover { background: rgba(255,255,255,.035); }
 
       .status {
+        display: inline-flex;
+        align-items: center;
         border-radius: 6px;
         padding: 5px 9px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 800;
       }
+      .pending { background: rgba(245,184,46,.18); color: var(--gold-light); }
+      .review { background: rgba(39,196,244,.18); color: var(--cyan); }
+      .verified { background: rgba(50,199,106,.18); color: var(--success); }
+      .danger { background: rgba(229,87,79,.18); color: var(--danger); }
 
-      .pending {
-        background: rgba(245, 184, 46, 0.18);
-        color: var(--gold-light);
-      }
-
-      .review {
-        background: rgba(39, 196, 244, 0.18);
-        color: var(--cyan);
-      }
-
-      .verified {
-        background: rgba(50, 199, 106, 0.18);
-        color: var(--success);
-      }
-
-      .donut-layout {
-        display: grid;
-        grid-template-columns: 240px 1fr;
-        gap: 22px;
-        align-items: center;
-      }
-
+      .donut-layout { display: grid; grid-template-columns: 230px 1fr; gap: 22px; align-items: center; }
       .donut {
         width: 220px;
         aspect-ratio: 1;
@@ -404,183 +310,97 @@
         display: grid;
         place-items: center;
         background: conic-gradient(var(--gold) 0 43%, #2d9cdb 43% 64%, var(--danger) 64% 80%, var(--success) 80% 96%, #8a96a6 96% 100%);
+        transition: background .25s ease;
       }
+      .donut-center { display: grid; place-items: center; width: 118px; aspect-ratio: 1; border-radius: 50%; background: #07182b; text-align: center; }
 
-      .donut-center {
-        display: grid;
-        place-items: center;
-        width: 118px;
-        aspect-ratio: 1;
-        border-radius: 50%;
-        background: #07182b;
-        text-align: center;
+      .drawer {
+        position: fixed;
+        inset: 0 0 0 auto;
+        z-index: 30;
+        width: min(440px, 100%);
+        padding: 24px;
+        border-left: 1px solid var(--border);
+        background: rgba(3,16,36,.98);
+        box-shadow: -30px 0 80px rgba(0,0,0,.4);
+        transform: translateX(102%);
+        transition: transform .25s ease;
       }
+      .drawer.open { transform: translateX(0); }
+      .drawer .close { float: right; }
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 50;
+        max-width: 360px;
+        padding: 14px 16px;
+        border: 1px solid rgba(245,184,46,.35);
+        border-radius: 10px;
+        background: #081b30;
+        color: white;
+        box-shadow: 0 18px 45px rgba(0,0,0,.35);
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition: .2s ease;
+      }
+      .toast.show { opacity: 1; transform: translateY(0); }
 
-      footer {
-        margin-top: 20px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.6;
-      }
+      .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+      .mini { padding: 16px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.035); }
+      .hidden { display: none !important; }
+
+      footer { margin-top: 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 
       @media (max-width: 1180px) {
-        aside {
-          display: none;
-        }
-
-        .stats,
-        .grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
+        aside { display: none; }
+        .stats, .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
-
       @media (max-width: 760px) {
-        header,
-        .content {
-          padding-left: 16px;
-          padding-right: 16px;
-        }
-
-        .title-row,
-        .province,
-        .donut-layout,
-        .grid,
-        .stats {
-          grid-template-columns: 1fr;
-        }
-
-        .title-row {
-          display: grid;
-        }
+        header, .content { padding-left: 16px; padding-right: 16px; }
+        .title-row, .province, .donut-layout, .grid, .stats, .mini-grid { display: grid; grid-template-columns: 1fr; }
+        .donut { margin: 0 auto; }
       }
     </style>
   </head>
   <body>
     <div class="shell">
-      <aside>
+      <aside id="sidebar">
         <div class="brand">
           <img src="assets/kcs-logo-placeholder.png" alt="Kinshasa Christian School logo" />
-          <div>
-            <strong>KCS</strong>
-            <span>Opportunity Program</span>
-          </div>
+          <div><strong>KCS</strong><span>Opportunity Program</span></div>
         </div>
-
-        <div class="group">
-          <p class="group-title">MAIN</p>
-          <button class="nav-item active">⌂ Dashboard</button>
-          <button class="nav-item">▣ Applications</button>
-          <button class="nav-item">▤ Payments</button>
-          <button class="nav-item">▥ Documents</button>
-          <button class="nav-item">✉ Messages</button>
-        </div>
-        <div class="group">
-          <p class="group-title">MANAGEMENT</p>
-          <button class="nav-item">◉ Students</button>
-          <button class="nav-item">◎ Guardians</button>
-          <button class="nav-item">◈ Reviewers</button>
-          <button class="nav-item">◍ Administrators</button>
-          <button class="nav-item">◇ Roles & Permissions</button>
-        </div>
-        <div class="group">
-          <p class="group-title">PROGRAM</p>
-          <button class="nav-item">▧ Campaigns</button>
-          <button class="nav-item">☑ Eligibility Rules</button>
-          <button class="nav-item">✦ Selection</button>
-          <button class="nav-item">▦ Results</button>
-        </div>
-        <div class="group">
-          <p class="group-title">SYSTEM</p>
-          <button class="nav-item">⚙ Settings</button>
-          <button class="nav-item">◌ Security</button>
-          <button class="nav-item">☷ Audit Logs</button>
-        </div>
+        <nav id="nav"></nav>
       </aside>
 
       <main>
         <header>
-          <button class="icon-btn">☰</button>
+          <button class="icon-btn" id="refreshBtn" title="Refresh live data">R</button>
           <div class="top-actions">
-            <button class="icon-btn">♧<span class="badge">3</span></button>
-            <button class="icon-btn">✉<span class="badge">5</span></button>
-            <button class="icon-btn">●</button>
+            <button class="icon-btn" id="notificationsBtn" title="Notifications">N<span class="badge" id="notificationCount">3</span></button>
+            <button class="icon-btn" id="messagesBtn" title="Messages">M<span class="badge" id="messageCount">5</span></button>
+            <button class="icon-btn" id="adminBtn" title="Admin profile">A</button>
           </div>
         </header>
 
         <section class="content">
           <div class="title-row">
             <div>
-              <h1>Dashboard</h1>
-              <p class="muted">Welcome back, KCS Administration Team</p>
+              <h1 id="pageTitle">Dashboard</h1>
+              <p class="muted" id="pageSubtitle">Live operational workspace for the KCS Opportunity Program</p>
             </div>
-            <button class="date-pill">July 2026 ▾</button>
+            <div class="controls">
+              <select class="select" id="campaignSelect" aria-label="Campaign">
+                <option value="2026">Campaign 2026</option>
+                <option value="2027">Campaign 2027</option>
+                <option value="pilot">Pilot Review</option>
+              </select>
+              <button class="btn gold" id="newApplicationBtn">New Application</button>
+            </div>
           </div>
 
-          <div class="stats">
-            <article class="card"><div class="card-inner"><div class="card-icon">♙</div><div><h3>Total Applications</h3><div class="value">24,589</div><p class="meta">↑ 12.5% from last month</p></div></div></article>
-            <article class="card"><div class="card-inner"><div class="card-icon">⌛</div><div><h3>Pending Review</h3><div class="value">4,752</div><p class="meta" style="color: var(--gold-light)">Waiting for verification</p></div></div></article>
-            <article class="card"><div class="card-inner"><div class="card-icon">▣</div><div><h3>Total Payments</h3><div class="value">$1,248,750</div><p class="meta">↑ 18.3% from last month</p></div></div></article>
-            <article class="card"><div class="card-inner"><div class="card-icon" style="color: var(--cyan)">◇</div><div><h3>Eligible Applicants</h3><div class="value">8,420</div><p class="meta" style="color: var(--cyan)">Ready for selection pool</p></div></div></article>
-          </div>
-
-          <div class="grid">
-            <section class="panel">
-              <div class="panel-head"><h2>Applications Overview</h2><button class="date-pill">This Year ▾</button></div>
-              <svg class="chart" viewBox="0 0 720 260" role="img" aria-label="Applications overview chart">
-                <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f5b82e" stop-opacity=".48"/><stop offset="1" stop-color="#f5b82e" stop-opacity=".03"/></linearGradient></defs>
-                <g stroke="rgba(255,255,255,.11)"><path d="M50 35H700"/><path d="M50 90H700"/><path d="M50 145H700"/><path d="M50 200H700"/></g>
-                <path d="M60 205 L160 185 L260 145 L370 123 L480 108 L590 78 L690 48 L690 225 L60 225Z" fill="url(#area)" />
-                <path d="M60 205 L160 185 L260 145 L370 123 L480 108 L590 78 L690 48" fill="none" stroke="#f5b82e" stroke-width="3" />
-                <g fill="#f5b82e" stroke="#ffd96a"><circle cx="60" cy="205" r="5"/><circle cx="160" cy="185" r="5"/><circle cx="260" cy="145" r="5"/><circle cx="370" cy="123" r="5"/><circle cx="480" cy="108" r="5"/><circle cx="590" cy="78" r="5"/><circle cx="690" cy="48" r="5"/></g>
-                <g fill="#d5deea" font-size="13"><text x="55" y="248">Jan</text><text x="155" y="248">Feb</text><text x="255" y="248">Mar</text><text x="365" y="248">Apr</text><text x="475" y="248">May</text><text x="585" y="248">Jun</text><text x="685" y="248">Jul</text></g>
-              </svg>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head"><h2>Applications by Province</h2></div>
-              <div class="province">
-                <div class="map"></div>
-                <div class="legend">
-                  <div class="legend-row"><span><i class="dot" style="background: var(--gold-light)"></i>Kinshasa</span><strong>6,245</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: var(--gold)"></i>Haut-Katanga</span><strong>3,456</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: var(--gold-2)"></i>Lualaba</span><strong>2,987</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: #c8a85c"></i>Nord-Kivu</span><strong>2,450</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: #e8b93f"></i>South-Kivu</span><strong>2,230</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: #6c7887"></i>Other</span><strong>7,221</strong></div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div class="grid">
-            <section class="panel">
-              <div class="panel-head"><h2>Recent Applications</h2></div>
-              <div class="table-wrap">
-                <table>
-                  <tbody>
-                    <tr><td><strong>Grace M.</strong></td><td class="muted">grace.muteba@example.com</td><td><span class="status pending">Pending</span></td><td>Jul 26, 2026</td></tr>
-                    <tr><td><strong>Peter K.</strong></td><td class="muted">peter.kabeya@example.com</td><td><span class="status review">Under Review</span></td><td>Jul 26, 2026</td></tr>
-                    <tr><td><strong>Amina T.</strong></td><td class="muted">amina.tshibola@example.com</td><td><span class="status verified">Verified</span></td><td>Jul 25, 2026</td></tr>
-                    <tr><td><strong>David L.</strong></td><td class="muted">david.lubaki@example.com</td><td><span class="status pending">Correction</span></td><td>Jul 25, 2026</td></tr>
-                    <tr><td><strong>John S.</strong></td><td class="muted">john.samba@example.com</td><td><span class="status verified">Eligible</span></td><td>Jul 24, 2026</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head"><h2>Payment Summary</h2></div>
-              <div class="donut-layout">
-                <div class="donut"><div class="donut-center"><span class="muted">Total</span><strong>$1,248,750</strong></div></div>
-                <div class="legend">
-                  <div class="legend-row"><span><i class="dot" style="background: var(--gold)"></i>M-Pesa</span><strong>$542,300&nbsp;&nbsp;43.4%</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: #2d9cdb"></i>Airtel Money</span><strong>$256,120&nbsp;&nbsp;20.5%</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: var(--danger)"></i>Orange Money</span><strong>$198,450&nbsp;&nbsp;15.9%</strong></div>
-                  <div class="legend-row"><span><i class="dot" style="background: var(--success)"></i>Bank Transfer</span><strong>$201,880&nbsp;&nbsp;16.2%</strong></div>
-                </div>
-              </div>
-            </section>
-          </div>
+          <div id="view"></div>
 
           <footer>
             This is a private academic opportunity program organized by Kinshasa Christian School. It is not affiliated with the U.S. Government, the U.S. Department of State, the U.S. Embassy, USCIS, or the official Diversity Visa Program.
@@ -588,5 +408,234 @@
         </section>
       </main>
     </div>
+
+    <aside class="drawer" id="drawer" aria-live="polite"></aside>
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const app = {
+        view: "dashboard",
+        campaign: "2026",
+        search: "",
+        status: "all",
+        selectedProvince: "Kinshasa",
+        applications: [
+          { id: "KCS-2026-000001", name: "Grace Muteba", email: "grace.muteba@example.com", province: "Kinshasa", status: "pending", payment: "successful", documents: 7, amount: 150, date: "2026-07-26" },
+          { id: "KCS-2026-000002", name: "Peter Kabeya", email: "peter.kabeya@example.com", province: "Haut-Katanga", status: "under_review", payment: "processing", documents: 5, amount: 150, date: "2026-07-26" },
+          { id: "KCS-2026-000003", name: "Amina Tshibola", email: "amina.tshibola@example.com", province: "Lualaba", status: "verified", payment: "successful", documents: 8, amount: 150, date: "2026-07-25" },
+          { id: "KCS-2026-000004", name: "David Lubaki", email: "david.lubaki@example.com", province: "Nord-Kivu", status: "correction_required", payment: "failed", documents: 3, amount: 150, date: "2026-07-25" },
+          { id: "KCS-2026-000005", name: "John Samba", email: "john.samba@example.com", province: "Kinshasa", status: "eligible", payment: "successful", documents: 8, amount: 150, date: "2026-07-24" },
+          { id: "KCS-2026-000006", name: "Naomi Beya", email: "naomi.beya@example.com", province: "South-Kivu", status: "submitted", payment: "successful", documents: 6, amount: 150, date: "2026-07-23" },
+          { id: "KCS-2026-000007", name: "Joel Ilunga", email: "joel.ilunga@example.com", province: "Kinshasa", status: "selected", payment: "successful", documents: 8, amount: 150, date: "2026-07-22" }
+        ],
+        activity: [
+          "Finance verified payment KCS-2026-000001",
+          "Reviewer requested correction for KCS-2026-000004",
+          "Selection officer froze eligible list draft",
+          "SMS queue retried 2 failed notifications"
+        ],
+        monthly: [42, 66, 91, 128, 158, 196, 237],
+        payments: [
+          { name: "M-Pesa", value: 5400, color: "#f5b82e" },
+          { name: "Airtel Money", value: 2850, color: "#2d9cdb" },
+          { name: "Orange Money", value: 1650, color: "#e5574f" },
+          { name: "Bank Transfer", value: 2250, color: "#32c76a" },
+          { name: "Other", value: 450, color: "#8a96a6" }
+        ]
+      };
+
+      const navGroups = [
+        ["MAIN", ["Dashboard", "Applications", "Payments", "Documents", "Messages"]],
+        ["MANAGEMENT", ["Students", "Guardians", "Reviewers", "Administrators", "Roles & Permissions"]],
+        ["PROGRAM", ["Campaigns", "Eligibility Rules", "Selection", "Results", "Announcements"]],
+        ["SYSTEM", ["Settings", "Security", "Audit Logs", "Backup & Recovery"]],
+        ["REPORTS", ["Analytics", "Reports", "Exports"]]
+      ];
+
+      const icons = { Dashboard: "D", Applications: "A", Payments: "$", Documents: "F", Messages: "M", Students: "S", Guardians: "G", Reviewers: "R", Administrators: "AD", "Roles & Permissions": "RP", Campaigns: "C", "Eligibility Rules": "ER", Selection: "SL", Results: "RS", Announcements: "AN", Settings: "ST", Security: "SC", "Audit Logs": "AL", "Backup & Recovery": "BR", Analytics: "CH", Reports: "RE", Exports: "EX" };
+      const labels = { pending: "Pending", under_review: "Under Review", verified: "Verified", eligible: "Eligible", submitted: "Submitted", correction_required: "Correction", selected: "Selected" };
+
+      function money(value) { return "$" + value.toLocaleString(); }
+      function statusClass(status) {
+        if (["verified", "eligible", "selected", "successful"].includes(status)) return "verified";
+        if (["under_review", "submitted", "processing"].includes(status)) return "review";
+        if (["failed", "correction_required"].includes(status)) return "danger";
+        return "pending";
+      }
+      function toast(message) {
+        const el = document.getElementById("toast");
+        el.textContent = message;
+        el.classList.add("show");
+        clearTimeout(window.toastTimer);
+        window.toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+      }
+      function openDrawer(title, html) {
+        const drawer = document.getElementById("drawer");
+        drawer.innerHTML = `<button class="btn close" onclick="closeDrawer()">Close</button><h2>${title}</h2><div style="clear:both;margin-top:24px">${html}</div>`;
+        drawer.classList.add("open");
+      }
+      function closeDrawer() { document.getElementById("drawer").classList.remove("open"); }
+
+      function renderNav() {
+        document.getElementById("nav").innerHTML = navGroups.map(([group, items]) => `
+          <div class="group">
+            <p class="group-title">${group}</p>
+            ${items.map(item => `<button class="nav-item ${item.toLowerCase().replaceAll(" ", "_").replaceAll("&", "and") === app.view ? "active" : ""}" data-view="${item}"><span>${icons[item]}</span>${item}</button>`).join("")}
+          </div>`).join("");
+        document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => {
+          app.view = btn.dataset.view.toLowerCase().replaceAll(" ", "_").replaceAll("&", "and");
+          render();
+        }));
+      }
+
+      function filteredApps() {
+        return app.applications.filter(item => {
+          const matchesSearch = [item.id, item.name, item.email, item.province].join(" ").toLowerCase().includes(app.search.toLowerCase());
+          const matchesStatus = app.status === "all" || item.status === app.status;
+          return matchesSearch && matchesStatus;
+        });
+      }
+
+      function stats() {
+        const apps = app.applications;
+        return [
+          ["Total Applications", apps.length, "Live local dataset", "A"],
+          ["Pending Review", apps.filter(a => ["pending", "under_review"].includes(a.status)).length, "Reviewer queue", "T"],
+          ["Total Payments", money(app.payments.reduce((sum, p) => sum + p.value, 0)), "Confirmed and processing", "$"],
+          ["Eligible Applicants", apps.filter(a => ["eligible", "selected"].includes(a.status)).length, "Ready for selection pool", "E"]
+        ];
+      }
+
+      function renderStats() {
+        return `<div class="stats">${stats().map(s => `
+          <article class="card"><div class="card-inner"><div class="card-icon">${s[3]}</div><div><h3>${s[0]}</h3><div class="value">${s[1]}</div><p class="meta">${s[2]}</p></div></div></article>
+        `).join("")}</div>`;
+      }
+
+      function lineChart() {
+        const max = Math.max(...app.monthly);
+        const points = app.monthly.map((value, i) => {
+          const x = 60 + i * 105;
+          const y = 220 - (value / max) * 172;
+          return [x, y];
+        });
+        const d = points.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
+        const area = `${d} L690 230 L60 230Z`;
+        return `<svg class="chart" viewBox="0 0 720 260" role="img">
+          <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f5b82e" stop-opacity=".48"/><stop offset="1" stop-color="#f5b82e" stop-opacity=".03"/></linearGradient></defs>
+          <g stroke="rgba(255,255,255,.11)"><path d="M50 35H700"/><path d="M50 90H700"/><path d="M50 145H700"/><path d="M50 200H700"/></g>
+          <path d="${area}" fill="url(#area)"/><path d="${d}" fill="none" stroke="#f5b82e" stroke-width="3"/>
+          <g fill="#f5b82e" stroke="#ffd96a">${points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="5"/>`).join("")}</g>
+          <g fill="#d5deea" font-size="13">${["Jan","Feb","Mar","Apr","May","Jun","Jul"].map((m, i) => `<text x="${55 + i * 105}" y="248">${m}</text>`).join("")}</g>
+        </svg>`;
+      }
+
+      function provincePanel() {
+        const counts = app.applications.reduce((acc, item) => ({ ...acc, [item.province]: (acc[item.province] || 0) + 1 }), {});
+        const provinces = ["Kinshasa", "Haut-Katanga", "Lualaba", "Nord-Kivu", "South-Kivu"];
+        return `<section class="panel"><div class="panel-head"><h2>Applications by Province</h2><span class="muted">Click a province</span></div>
+          <div class="province"><div class="map">
+            ${provinces.map((name, i) => `<button class="map-shape ${name === app.selectedProvince ? "hot" : ""}" data-province="${name}" style="left:${14 + i * 12}%;top:${18 + (i % 2) * 26}%;width:${105 - i * 6}px;height:${96 + i * 7}px"></button>`).join("")}
+          </div><div class="legend">
+            ${provinces.map((name, i) => `<button class="legend-row" data-province="${name}"><span><i class="dot" style="background:${["#ffd96a","#f5b82e","#d99c1d","#c8a85c","#e8b93f"][i]}"></i>${name}</span><strong>${counts[name] || 0}</strong></button>`).join("")}
+          </div></div></section>`;
+      }
+
+      function applicationsTable(limit) {
+        const rows = filteredApps().slice(0, limit || 99);
+        return `<div class="toolbar"><input class="field" id="searchInput" placeholder="Search by name, email, province or application number" value="${app.search}"/>
+          <div class="controls"><select class="select" id="statusFilter"><option value="all">All statuses</option>${Object.keys(labels).map(s => `<option value="${s}" ${app.status === s ? "selected" : ""}>${labels[s]}</option>`).join("")}</select><button class="btn" id="exportBtn">Export CSV</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Application</th><th>Applicant</th><th>Province</th><th>Status</th><th>Payment</th><th>Documents</th><th>Action</th></tr></thead><tbody>
+            ${rows.map(a => `<tr><td><strong>${a.id}</strong></td><td>${a.name}<br><span class="muted">${a.email}</span></td><td>${a.province}</td><td><span class="status ${statusClass(a.status)}">${labels[a.status]}</span></td><td><span class="status ${statusClass(a.payment)}">${a.payment}</span></td><td>${a.documents}/8</td><td><button class="btn" data-open="${a.id}">Review</button></td></tr>`).join("")}
+          </tbody></table></div>`;
+      }
+
+      function paymentPanel() {
+        const total = app.payments.reduce((sum, p) => sum + p.value, 0);
+        let start = 0;
+        const stops = app.payments.map(p => {
+          const end = start + (p.value / total) * 100;
+          const segment = `${p.color} ${start}% ${end}%`;
+          start = end;
+          return segment;
+        }).join(", ");
+        return `<section class="panel"><div class="panel-head"><h2>Payment Summary</h2><button class="btn" id="simulatePaymentBtn">Simulate Payment</button></div>
+          <div class="donut-layout"><div class="donut" style="background:conic-gradient(${stops})"><div class="donut-center"><span class="muted">Total</span><strong>${money(total)}</strong></div></div>
+          <div class="legend">${app.payments.map(p => `<div class="legend-row"><span><i class="dot" style="background:${p.color}"></i>${p.name}</span><strong>${money(p.value)}</strong></div>`).join("")}</div></div></section>`;
+      }
+
+      function dashboardView() {
+        return `${renderStats()}<div class="grid"><section class="panel"><div class="panel-head"><h2>Applications Overview</h2><button class="btn" id="trendBtn">Add Week</button></div>${lineChart()}</section>${provincePanel()}</div><div class="grid"><section class="panel"><div class="panel-head"><h2>Recent Applications</h2><button class="btn" onclick="goView('applications')">View all</button></div>${applicationsTable(5)}</section>${paymentPanel()}</div><div class="mini-grid">${app.activity.map(item => `<div class="mini"><strong>Activity</strong><p class="muted">${item}</p></div>`).join("")}</div>`;
+      }
+
+      function genericView(title) {
+        return `${renderStats()}<div class="grid"><section class="panel"><div class="panel-head"><h2>${title} Workspace</h2><button class="btn gold" id="genericAction">Create Record</button></div><p class="muted">This module is interactive in the prototype: actions update the live activity feed and keep the same KCS dashboard language.</p><div class="mini-grid"><div class="mini"><strong>Queue</strong><div class="value">${Math.floor(Math.random()*20)+4}</div></div><div class="mini"><strong>Approved</strong><div class="value">${Math.floor(Math.random()*18)+3}</div></div><div class="mini"><strong>Alerts</strong><div class="value">${Math.floor(Math.random()*6)+1}</div></div></div></section><section class="panel"><h2>Recent Activity</h2><div class="legend" style="margin-top:18px">${app.activity.map(a => `<div class="legend-row"><span>${a}</span></div>`).join("")}</div></section></div>`;
+      }
+
+      function renderView() {
+        if (app.view === "dashboard") return dashboardView();
+        if (app.view === "applications") return `${renderStats()}<section class="panel" style="margin-top:20px"><div class="panel-head"><h2>Application Review Center</h2><button class="btn gold" id="newApplicationInline">Add Applicant</button></div>${applicationsTable()}</section>`;
+        if (app.view === "payments") return `<div class="grid">${paymentPanel()}<section class="panel"><h2>Payment Reconciliation</h2><div class="mini-grid"><div class="mini"><strong>Successful</strong><div class="value">${app.applications.filter(a=>a.payment==="successful").length}</div></div><div class="mini"><strong>Processing</strong><div class="value">${app.applications.filter(a=>a.payment==="processing").length}</div></div><div class="mini"><strong>Failed</strong><div class="value">${app.applications.filter(a=>a.payment==="failed").length}</div></div></div></section></div><section class="panel" style="margin-top:20px">${applicationsTable()}</section>`;
+        return genericView(app.view.split("_").map(w => w[0].toUpperCase() + w.slice(1)).join(" "));
+      }
+
+      function attachEvents() {
+        document.getElementById("campaignSelect").value = app.campaign;
+        document.getElementById("campaignSelect").onchange = e => { app.campaign = e.target.value; toast("Campaign changed to " + e.target.options[e.target.selectedIndex].text); render(); };
+        document.getElementById("refreshBtn").onclick = () => { app.monthly = app.monthly.map(v => v + Math.floor(Math.random() * 9)); app.activity.unshift("Live data refreshed at " + new Date().toLocaleTimeString()); render(); toast("Dashboard data refreshed"); };
+        document.getElementById("newApplicationBtn").onclick = addApplication;
+        document.getElementById("notificationsBtn").onclick = () => openDrawer("Notifications", app.activity.map(a => `<p class="mini">${a}</p>`).join(""));
+        document.getElementById("messagesBtn").onclick = () => openDrawer("Messages", `<p class="mini">3 applicant messages need replies.</p><p class="mini">2 payment confirmations are waiting for finance.</p>`);
+        document.getElementById("adminBtn").onclick = () => openDrawer("KCS Admin", `<p class="mini">Role: Super Administrator</p><p class="mini">Session: local prototype</p>`);
+        const search = document.getElementById("searchInput");
+        if (search) search.oninput = e => { app.search = e.target.value; render(); };
+        const status = document.getElementById("statusFilter");
+        if (status) status.onchange = e => { app.status = e.target.value; render(); };
+        document.querySelectorAll("[data-open]").forEach(btn => btn.onclick = () => reviewApplication(btn.dataset.open));
+        document.querySelectorAll("[data-province]").forEach(btn => btn.onclick = () => { app.selectedProvince = btn.dataset.province; app.search = btn.dataset.province; render(); toast("Filtered province: " + btn.dataset.province); });
+        const exportBtn = document.getElementById("exportBtn");
+        if (exportBtn) exportBtn.onclick = exportCsv;
+        const trendBtn = document.getElementById("trendBtn");
+        if (trendBtn) trendBtn.onclick = () => { app.monthly.push(app.monthly[app.monthly.length - 1] + Math.floor(Math.random() * 35) + 8); app.monthly = app.monthly.slice(-7); render(); toast("Application trend updated"); };
+        const payBtn = document.getElementById("simulatePaymentBtn");
+        if (payBtn) payBtn.onclick = () => { app.payments[0].value += 150; app.activity.unshift("Sandbox payment received through M-Pesa"); render(); toast("Sandbox payment added"); };
+        const inline = document.getElementById("newApplicationInline");
+        if (inline) inline.onclick = addApplication;
+        const generic = document.getElementById("genericAction");
+        if (generic) generic.onclick = () => { app.activity.unshift("New record created in " + app.view.replaceAll("_", " ")); render(); toast("Prototype record created"); };
+      }
+
+      function reviewApplication(id) {
+        const item = app.applications.find(a => a.id === id);
+        openDrawer(item.id, `<p class="mini"><strong>${item.name}</strong><br>${item.email}</p><p class="mini">Status: ${labels[item.status]}<br>Payment: ${item.payment}<br>Documents: ${item.documents}/8</p><button class="btn gold" onclick="approveApplication('${id}')">Approve as eligible</button> <button class="btn" onclick="requestCorrection('${id}')">Request correction</button>`);
+      }
+      function approveApplication(id) { const item = app.applications.find(a => a.id === id); item.status = "eligible"; app.activity.unshift("Application " + id + " approved as eligible"); closeDrawer(); render(); toast("Application approved"); }
+      function requestCorrection(id) { const item = app.applications.find(a => a.id === id); item.status = "correction_required"; app.activity.unshift("Correction requested for " + id); closeDrawer(); render(); toast("Correction requested"); }
+      function addApplication() {
+        const next = String(app.applications.length + 1).padStart(6, "0");
+        app.applications.unshift({ id: "KCS-2026-" + next, name: "New Applicant " + next, email: "applicant" + next + "@example.com", province: "Kinshasa", status: "submitted", payment: "processing", documents: 4, amount: 150, date: "2026-07-24" });
+        app.activity.unshift("New draft application KCS-2026-" + next + " created");
+        render();
+        toast("New application created");
+      }
+      function exportCsv() {
+        const csv = ["id,name,email,province,status,payment,documents"].concat(filteredApps().map(a => [a.id,a.name,a.email,a.province,a.status,a.payment,a.documents].join(","))).join("\\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "kcs-applications.csv"; a.click(); URL.revokeObjectURL(url);
+        toast("CSV export generated");
+      }
+      function goView(view) { app.view = view; render(); }
+      function render() {
+        renderNav();
+        const title = app.view.split("_").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+        document.getElementById("pageTitle").textContent = title;
+        document.getElementById("pageSubtitle").textContent = app.view === "dashboard" ? "Live operational workspace for the KCS Opportunity Program" : "Interactive module prototype with live local state";
+        document.getElementById("view").innerHTML = renderView();
+        attachEvents();
+      }
+      render();
+    </script>
   </body>
 </html>
