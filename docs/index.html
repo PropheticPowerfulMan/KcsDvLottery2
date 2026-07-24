@@ -25,7 +25,7 @@
       }
 
       * { box-sizing: border-box; }
-      html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
+      html, body { width: 100%; height: 100%; overflow: hidden; }
       body {
         margin: 0;
         font-family: Inter, system-ui, sans-serif;
@@ -41,15 +41,18 @@
       .shell {
         display: flex;
         width: 100vw;
-        min-height: 100dvh;
+        height: 100dvh;
+        overflow: hidden;
         background: rgba(6, 20, 38, 0.86);
       }
 
       aside {
-        position: sticky;
+        position: fixed;
         top: 0;
+        left: 0;
+        z-index: 20;
         width: 282px;
-        height: 100vh;
+        height: 100dvh;
         flex: 0 0 282px;
         overflow-y: auto;
         padding: 24px 18px;
@@ -123,7 +126,14 @@
         box-shadow: 0 0 34px rgba(245,184,46,.16);
       }
 
-      main { min-width: 0; width: calc(100vw - 282px); flex: 1; }
+      main {
+        min-width: 0;
+        width: calc(100vw - 282px);
+        height: 100dvh;
+        margin-left: 282px;
+        flex: 1;
+        overflow-y: auto;
+      }
       header {
         position: sticky;
         top: 0;
@@ -258,14 +268,37 @@
         border-radius: 8px;
         background: #07182b;
       }
-      .map-shape {
-        position: absolute;
-        border: 1px solid rgba(245,184,46,.38);
-        border-radius: 44% 39% 46% 43%;
-        background: linear-gradient(135deg, rgba(245,184,46,.58), rgba(217,156,29,.25), transparent);
-        transition: transform .25s ease, filter .25s ease;
+      .drc-map {
+        width: 100%;
+        height: 250px;
+        display: block;
       }
-      .map-shape.hot { filter: brightness(1.35); box-shadow: 0 0 28px rgba(255,217,106,.22); }
+      .drc-outline {
+        fill: rgba(255, 217, 106, .08);
+        stroke: rgba(255, 217, 106, .45);
+        stroke-width: 1.8;
+      }
+      .province-zone {
+        fill: rgba(245,184,46,.34);
+        stroke: rgba(255,217,106,.52);
+        stroke-width: 1.1;
+        transition: fill .2s ease, filter .2s ease, transform .2s ease;
+        transform-box: fill-box;
+        transform-origin: center;
+        cursor: pointer;
+      }
+      .province-zone:hover,
+      .province-zone.hot {
+        fill: rgba(255,217,106,.78);
+        filter: drop-shadow(0 0 10px rgba(255,217,106,.34));
+        transform: scale(1.015);
+      }
+      .province-label {
+        fill: rgba(247,249,252,.82);
+        font-size: 10px;
+        font-weight: 800;
+        pointer-events: none;
+      }
 
       .legend { align-self: center; display: grid; gap: 15px; }
       .legend-row {
@@ -375,7 +408,7 @@
           transition: transform .22s ease;
         }
         body.nav-open aside#sidebar { transform: translateX(0); }
-        main { width: 100vw; }
+        main { width: 100vw; margin-left: 0; }
         .stats, .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
       @media (max-width: 760px) {
@@ -563,12 +596,37 @@
 
       function provincePanel() {
         const counts = app.applications.reduce((acc, item) => ({ ...acc, [item.province]: (acc[item.province] || 0) + 1 }), {});
-        const provinces = ["Kinshasa", "Haut-Katanga", "Lualaba", "Nord-Kivu", "South-Kivu"];
+        const provinces = [
+          { name: "Kinshasa", color: "#ffd96a", path: "M68 128 L88 118 L104 126 L98 145 L76 148 Z", label: [72, 139, "KIN"] },
+          { name: "Haut-Katanga", color: "#f5b82e", path: "M260 178 L318 168 L352 190 L344 232 L288 224 L252 204 Z", label: [285, 202, "HK"] },
+          { name: "Lualaba", color: "#d99c1d", path: "M202 158 L260 178 L252 204 L224 226 L182 206 L170 176 Z", label: [204, 194, "LUA"] },
+          { name: "Nord-Kivu", color: "#c8a85c", path: "M326 88 L354 96 L346 128 L320 126 L310 106 Z", label: [320, 112, "NK"] },
+          { name: "South-Kivu", color: "#e8b93f", path: "M318 128 L346 128 L342 158 L312 162 L300 144 Z", label: [309, 148, "SK"] }
+        ];
+        const outlinePath = "M54 126 L70 107 L88 104 L104 86 L134 92 L154 72 L184 82 L210 58 L238 68 L268 50 L300 58 L330 76 L364 84 L350 124 L366 148 L338 170 L356 194 L346 232 L292 228 L252 210 L224 232 L184 212 L154 220 L124 194 L94 184 L72 156 L42 150 Z";
+        const backgroundCells = [
+          "M88 104 L104 86 L134 92 L126 128 L104 126 Z",
+          "M134 92 L154 72 L184 82 L176 120 L126 128 Z",
+          "M184 82 L210 58 L238 68 L226 116 L176 120 Z",
+          "M238 68 L268 50 L300 58 L292 108 L226 116 Z",
+          "M292 108 L300 58 L330 76 L326 88 L310 106 Z",
+          "M104 126 L126 128 L134 164 L98 145 Z",
+          "M126 128 L176 120 L170 176 L134 164 Z",
+          "M176 120 L226 116 L202 158 L170 176 Z",
+          "M226 116 L292 108 L260 178 L202 158 Z",
+          "M292 108 L310 106 L320 126 L300 144 L260 178 Z",
+          "M98 145 L134 164 L124 194 L94 184 L72 156 Z",
+          "M134 164 L170 176 L182 206 L154 220 L124 194 Z"
+        ];
         return `<section class="panel"><div class="panel-head"><h2>Applications by Province</h2><span class="muted">Click a province</span></div>
           <div class="province"><div class="map">
-            ${provinces.map((name, i) => `<button class="map-shape ${name === app.selectedProvince ? "hot" : ""}" data-province="${name}" style="left:${14 + i * 12}%;top:${18 + (i % 2) * 26}%;width:${105 - i * 6}px;height:${96 + i * 7}px"></button>`).join("")}
+            <svg class="drc-map" viewBox="20 32 370 220" role="img" aria-label="Democratic Republic of Congo province map">
+              <path class="drc-outline" d="${outlinePath}"></path>
+              ${backgroundCells.map(path => `<path class="province-zone" style="fill:rgba(245,184,46,.12)" d="${path}"></path>`).join("")}
+              ${provinces.map(province => `<path class="province-zone ${province.name === app.selectedProvince ? "hot" : ""}" data-province="${province.name}" style="fill:${province.name === app.selectedProvince ? "rgba(255,217,106,.78)" : province.color + "66"}" d="${province.path}"></path><text class="province-label" x="${province.label[0]}" y="${province.label[1]}">${province.label[2]}</text>`).join("")}
+            </svg>
           </div><div class="legend">
-            ${provinces.map((name, i) => `<button class="legend-row" data-province="${name}"><span><i class="dot" style="background:${["#ffd96a","#f5b82e","#d99c1d","#c8a85c","#e8b93f"][i]}"></i>${name}</span><strong>${counts[name] || 0}</strong></button>`).join("")}
+            ${provinces.map(province => `<button class="legend-row" data-province="${province.name}"><span><i class="dot" style="background:${province.color}"></i>${province.name}</span><strong>${counts[province.name] || 0}</strong></button>`).join("")}
           </div></div></section>`;
       }
 
