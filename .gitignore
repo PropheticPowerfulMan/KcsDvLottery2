@@ -1,6 +1,7 @@
 node_modules
 .next
 out
+.gh-pages-deploy
 .env
 .env.local
 .env.*.local
