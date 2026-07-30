@@ -14,7 +14,7 @@ const stats = [
   { label: "Failed Payments", value: "318", meta: "Needs finance follow-up", icon: FileWarning, tone: "text-kcs-danger", trend: "warn" },
   { label: "Documents Awaiting Verification", value: "1,904", meta: "Assigned review queue", icon: ClipboardList, tone: "text-kcs-goldLight", trend: "warn" },
   { label: "Applications Requiring Correction", value: "642", meta: "Applicant action needed", icon: Award, tone: "text-kcs-warning", trend: "warn" }
-];
+] as const;
 
 export function AdminDashboard() {
   return (
