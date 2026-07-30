@@ -1,15 +1,19 @@
 import Image from "next/image";
 
-export function KcsBrand({ compact = false }: { compact?: boolean }) {
+export function KcsBrand({ compact = false, tone = "dark" }: { compact?: boolean; tone?: "dark" | "light" }) {
+  const titleColor = tone === "light" ? "text-[#1f2328]" : "text-kcs-gold";
+  const captionColor = tone === "light" ? "text-[#57606a]" : "text-kcs-muted";
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
   return (
     <div className="flex items-center gap-3">
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-white/15 bg-white shadow-glow">
-        <Image src="/branding/kcs-logo-placeholder.png" alt="Kinshasa Christian School logo" fill className="object-cover" priority />
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-[#d0d7de] bg-white shadow-sm sm:h-14 sm:w-14">
+        <Image src={`${basePath}/branding/kcs-logo-placeholder.png`} alt="Kinshasa Christian School logo" fill className="object-cover" priority />
       </div>
       {!compact && (
-        <div>
-          <p className="text-lg font-extrabold tracking-[0.08em] text-kcs-gold">KCS</p>
-          <p className="text-[11px] font-medium uppercase tracking-[0.26em] text-kcs-muted">Opportunity Program</p>
+        <div className="min-w-0">
+          <p className={`text-lg font-extrabold tracking-normal ${titleColor}`}>KCS</p>
+          <p className={`text-[11px] font-medium uppercase tracking-[0.12em] ${captionColor}`}>Opportunity Program</p>
         </div>
       )}
     </div>
