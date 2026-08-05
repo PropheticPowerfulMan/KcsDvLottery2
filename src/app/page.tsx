@@ -124,6 +124,7 @@ export default function Home() {
 
 function RegistrationPanel() {
   const [notice, setNotice] = useState<Notice>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reference, setReference] = useState(`${paymentReferencePrefix}-00000`);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -198,11 +199,15 @@ function RegistrationPanel() {
     });
 
     setIsSubmitting(false);
-    setNotice(
-      result.ok
-        ? { tone: "success", text: `Candidature envoyée. Référence : ${reference}` }
-        : { tone: "error", text: `Supabase a refusé l'envoi : ${result.error}` }
-    );
+    if (result.ok) {
+      setNotice(null);
+      setSuccessMessage(`Votre compte candidat et votre dossier ont été créés avec succès. Référence de paiement : ${reference}`);
+      event.currentTarget.reset();
+      setReference(`${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`);
+      return;
+    }
+
+    setNotice({ tone: "error", text: `Supabase a refusé l'envoi : ${result.error}` });
   }
 
   return (
@@ -211,25 +216,25 @@ function RegistrationPanel() {
         <SectionTitle icon={UserPlus} title="Nouvelle candidature" caption="Utiliser les noms légaux exactement comme ils apparaissent sur les documents officiels." />
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <Field name="first_name" label="Prénom" placeholder="Grace" required />
-          <Field name="last_name" label="Nom" placeholder="Mbuyi" required />
+          <Field name="first_name" label="Prénom" required autoComplete="off" />
+          <Field name="last_name" label="Nom" required autoComplete="off" />
           <BirthDateFields />
-          <Field name="country_of_birth" label="Pays de naissance" placeholder="RD Congo" required />
-          <Field name="email" label="Adresse e-mail" type="email" placeholder="candidat@example.com" required />
+          <Field name="country_of_birth" label="Pays de naissance" required autoComplete="off" />
+          <Field name="email" label="Adresse e-mail" type="email" required autoComplete="off" />
           <PasswordField
             label="Mot de passe du compte"
-            placeholder="Créer un mot de passe"
+            autoComplete="new-password"
             isVisible={isPasswordVisible}
             onToggle={() => setIsPasswordVisible((value) => !value)}
           />
-          <Field name="phone" label="Numéro de téléphone" placeholder="+243..." required />
-          <Field name="education_level" label="Niveau d'études" placeholder="Diplôme d'État" required />
-          <Field name="identity_number" label="Numéro passeport ou carte d'identité" placeholder="Référence du document" required />
-          <Field name="guardian_name" label="Nom complet du responsable" placeholder="Parent ou responsable" />
-          <Field name="guardian_phone" label="Téléphone du responsable" placeholder="+243..." />
+          <Field name="phone" label="Numéro de téléphone" required autoComplete="off" />
+          <Field name="education_level" label="Niveau d'études" required autoComplete="off" />
+          <Field name="identity_number" label="Numéro passeport ou carte d'identité" required autoComplete="off" />
+          <Field name="guardian_name" label="Nom complet du responsable" autoComplete="off" />
+          <Field name="guardian_phone" label="Téléphone du responsable" autoComplete="off" />
           <label className="min-w-0">
             <span className="mb-2 block text-sm font-medium">Adresse de résidence</span>
-            <input name="residential_address" required className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="Ville, commune, quartier" />
+            <input name="residential_address" required autoComplete="off" className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" />
           </label>
           <label className="min-w-0 sm:col-span-2">
             <span className="mb-2 block text-sm font-medium">Motivation</span>
@@ -255,6 +260,7 @@ function RegistrationPanel() {
         </InfoPanel>
         <PaymentPanel reference={reference} />
       </aside>
+      {successMessage ? <SuccessDialog message={successMessage} onClose={() => setSuccessMessage(null)} /> : null}
     </div>
   );
 }
@@ -295,7 +301,7 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: (session: { accessToken
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4">
           <Field name="email" label="Adresse e-mail" placeholder="candidat@example.com" type="email" required />
-          <PasswordField isVisible={isPasswordVisible} onToggle={() => setIsPasswordVisible((value) => !value)} />
+          <PasswordField autoComplete="current-password" isVisible={isPasswordVisible} onToggle={() => setIsPasswordVisible((value) => !value)} />
           <button disabled={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426] disabled:cursor-not-allowed disabled:opacity-60">
             <LockKeyhole className="h-4 w-4" />
             {isSubmitting ? "Connexion..." : "Se connecter"}
@@ -540,7 +546,28 @@ function SelectField({ name, label, options }: { name: string; label: string; op
   );
 }
 
-function PasswordField({ label = "Mot de passe", placeholder = "Mot de passe", isVisible, onToggle }: { label?: string; placeholder?: string; isVisible: boolean; onToggle: () => void }) {
+function SuccessDialog({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4">
+      <section className="w-full max-w-md rounded-lg border border-kcs-success/40 bg-[#081b30] p-5 shadow-premium">
+        <div className="flex items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-kcs-success/15 text-kcs-success">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-white">Candidature déposée</h2>
+            <p className="mt-2 text-sm leading-6 text-kcs-muted">{message}</p>
+          </div>
+        </div>
+        <button type="button" onClick={onClose} className="mt-5 h-10 w-full rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426]">
+          Fermer
+        </button>
+      </section>
+    </div>
+  );
+}
+
+function PasswordField({ label = "Mot de passe", placeholder = "", autoComplete = "off", isVisible, onToggle }: { label?: string; placeholder?: string; autoComplete?: string; isVisible: boolean; onToggle: () => void }) {
   const Icon = isVisible ? EyeOff : Eye;
   const toggleLabel = isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe";
 
@@ -553,6 +580,7 @@ function PasswordField({ label = "Mot de passe", placeholder = "Mot de passe", i
           type={isVisible ? "text" : "password"}
           required
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70"
         />
         <button
@@ -569,7 +597,7 @@ function PasswordField({ label = "Mot de passe", placeholder = "Mot de passe", i
   );
 }
 
-function Field({ label, name, placeholder, type = "text", required = false }: { label: string; name: string; placeholder?: string; type?: string; required?: boolean }) {
+function Field({ label, name, placeholder, type = "text", required = false, autoComplete }: { label: string; name: string; placeholder?: string; type?: string; required?: boolean; autoComplete?: string }) {
   return (
     <label className="min-w-0">
       <span className="mb-2 block text-sm font-medium">{label}</span>
@@ -578,6 +606,7 @@ function Field({ label, name, placeholder, type = "text", required = false }: { 
         type={type}
         required={required}
         placeholder={placeholder}
+        autoComplete={autoComplete}
         className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
       />
     </label>

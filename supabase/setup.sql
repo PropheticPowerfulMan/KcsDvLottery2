@@ -183,9 +183,24 @@ with check (
   or lower(email) = lower(auth.jwt() ->> 'email')
 );
 
-insert into storage.buckets (id, name, public)
-values ('payment-proofs', 'payment-proofs', false)
-on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'payment-proofs',
+  'payment-proofs',
+  false,
+  10485760,
+  array[
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'application/pdf'
+  ]
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "Applicants can upload payment proofs" on storage.objects;
 drop policy if exists "Applicants can read own payment proofs" on storage.objects;

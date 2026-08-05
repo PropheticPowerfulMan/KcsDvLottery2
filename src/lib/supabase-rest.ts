@@ -67,8 +67,7 @@ export async function uploadPaymentProof(reference: string, file: File): Promise
       headers: {
         apikey: supabasePublishableKey,
         Authorization: `Bearer ${supabasePublishableKey}`,
-        "Content-Type": file.type || "application/octet-stream",
-        "x-upsert": "true"
+        "Content-Type": file.type || "application/octet-stream"
       },
       body: file
     });
@@ -136,6 +135,14 @@ function translateSupabaseError(message: string) {
 
   if (lowerMessage.includes("failed to fetch")) {
     return "Impossible de joindre Supabase. Vérifiez la connexion Internet.";
+  }
+
+  if (lowerMessage.includes("bucket not found") || lowerMessage.includes("bucket")) {
+    return "Le stockage des preuves n'est pas encore configuré. Exécutez le fichier supabase/setup.sql dans Supabase.";
+  }
+
+  if (lowerMessage.includes("row-level security") || lowerMessage.includes("violates row-level security")) {
+    return "Supabase bloque cette action par sécurité. Exécutez le fichier supabase/setup.sql mis à jour.";
   }
 
   return message;
