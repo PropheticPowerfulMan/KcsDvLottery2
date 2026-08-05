@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   BadgeCheck,
@@ -1098,7 +1098,7 @@ function downloadReport(format: "doc" | "xls" | "pdf", rows: AdminMetric[], stat
   const filename = `rapport-kcs-${period}-${new Date().toISOString().slice(0, 10)}`;
 
   if (format === "pdf") {
-    downloadBlob(`${filename}.pdf`, "application/pdf", buildSimplePdf(buildReportPlainText(title, rows, stats, filters)));
+    downloadBlob(`${filename}.pdf`, "application/pdf", buildOfficialPdf(title, rows, stats, filters));
     return;
   }
 
@@ -1152,36 +1152,77 @@ function buildReportHtml(title: string, rows: AdminMetric[], stats: ReturnType<t
   `;
 }
 
-function buildReportPlainText(title: string, rows: AdminMetric[], stats: ReturnType<typeof buildAdminStats>, filters: Record<string, string>) {
-  return [
-    title,
-    `Généré le ${new Date().toLocaleString("fr-FR")}`,
-    "",
-    "Filtres",
-    JSON.stringify(filters),
-    "",
-    "Statistiques",
-    `Candidatures: ${stats.total}`,
-    `Provinces actives: ${stats.provinceCount}`,
-    `Taux d'acceptation: ${stats.approvalRate}%`,
-    `Paiements tracés: ${stats.paymentRate}%`,
-    `Preuves jointes: ${stats.proofRate}%`,
-    "",
-    "Détails",
-    ...rows.map((row) => `${row.first_name ?? ""} ${row.last_name ?? ""} | ${row.province ?? ""} | ${row.payment_operator ?? ""} | ${row.transaction_id ?? ""} | ${formatStatus(row.status)} | ${row.payment_reference ?? ""} | ${formatDate(row.created_at)}`)
-  ].join("\n");
+function buildOfficialPdf(title: string, rows: AdminMetric[], stats: ReturnType<typeof buildAdminStats>, filters: Record<string, string>) {
+  const createdAt = new Date().toLocaleString("fr-FR");
+  const pages: string[][] = [[]];
+  const addLine = (line = "") => {
+    if (pages[pages.length - 1].length >= 46) pages.push([]);
+    pages[pages.length - 1].push(toPdfText(line));
+  };
+
+  addLine("KCS OPPORTUNITY PROGRAM");
+  addLine("DOCUMENT OFFICIEL D'ADMINISTRATION");
+  addLine(title.toUpperCase());
+  addLine(`Genere le ${createdAt}`);
+  addLine(`Reference documentaire : KCS-RAP-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}`);
+  addLine("");
+  addLine("RESUME EXECUTIF");
+  addLine(`Candidatures analysees : ${stats.total}`);
+  addLine(`Provinces actives : ${stats.provinceCount}`);
+  addLine(`Taux d'acceptation : ${stats.approvalRate}%`);
+  addLine(`Paiements traces : ${stats.paymentRate}%`);
+  addLine(`Preuves jointes : ${stats.proofRate}%`);
+  addLine(`Completude moyenne : ${stats.completionRate}%`);
+  addLine("");
+  addLine("FILTRES APPLIQUES");
+  addLine(formatFilters(filters));
+  addLine("");
+  addLine("LECTURE ADMINISTRATIVE");
+  addLine("Ce rapport consolide les dossiers visibles dans le tableau administrateur au moment de l'export.");
+  addLine("Il sert au suivi des admissions, au controle financier et a la validation finale des resultats.");
+  addLine("");
+  addLine("DETAIL DES CANDIDATURES");
+  addLine("Nom complet | Province | Paiement | Transaction | Statut | Date");
+  addLine("-".repeat(96));
+
+  rows.forEach((row) => {
+    const name = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || "Candidat";
+    addLine(`${name} | ${row.province ?? "Non renseignee"} | ${row.payment_operator ?? "Non renseigne"} | ${row.transaction_id ?? "Sans ID"} | ${formatStatus(row.status)} | ${formatDate(row.created_at)}`);
+    if (row.email || row.phone) addLine(`Contact : ${row.email ?? ""} ${row.phone ? `- ${row.phone}` : ""}`);
+    if (row.motivation) addLine(`Motivation : ${row.motivation}`);
+    if (row.result_message || row.admin_message) addLine(`Decision : ${row.result_message ?? row.admin_message}`);
+    addLine("");
+  });
+
+  addLine("");
+  addLine("SIGNATURES");
+  addLine("Responsable des admissions : ____________________");
+  addLine("Service financier : _____________________________");
+  addLine("Direction KCS : __________________________________");
+
+  return renderPdfDocument(pages);
 }
 
-function buildSimplePdf(text: string) {
-  const lines = text.split("\n").flatMap((line) => line.match(/.{1,90}/g) ?? [""]);
-  const escapedLines = lines.map((line) => `(${line.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)")}) Tj`).join(" T* ");
-  const stream = `BT /F1 10 Tf 40 790 Td 12 TL ${escapedLines} ET`;
+function renderPdfDocument(pages: string[][]) {
+  const pageObjects: string[] = [];
+  const contentObjects: string[] = [];
+  const pageRefs: string[] = [];
+
+  pages.forEach((lines, index) => {
+    const pageObjectNumber = 3 + index * 2;
+    const contentObjectNumber = pageObjectNumber + 1;
+    pageRefs.push(`${pageObjectNumber} 0 R`);
+    const stream = buildPdfPageStream(lines, index + 1, pages.length);
+    pageObjects.push(`${pageObjectNumber} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents ${contentObjectNumber} 0 R >> endobj`);
+    contentObjects.push(`${contentObjectNumber} 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`);
+  });
+
   const objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
+    `2 0 obj << /Type /Pages /Kids [${pageRefs.join(" ")}] /Count ${pages.length} >> endobj`,
+    ...pageObjects.flatMap((page, index) => [page, contentObjects[index]]),
+    "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+    "6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj"
   ];
   let offset = "%PDF-1.4\n".length;
   const xref = ["0000000000 65535 f "];
@@ -1194,7 +1235,51 @@ function buildSimplePdf(text: string) {
   return `%PDF-1.4\n${body}\nxref\n0 ${xref.length}\n${xref.join("\n")}\ntrailer << /Size ${xref.length} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
 }
 
-function downloadBlob(filename: string, type: string, content: string) {
+function buildPdfPageStream(lines: string[], pageNumber: number, totalPages: number) {
+  const commands = [
+    "q 0.94 0.96 0.99 rg 0 0 595 842 re f Q",
+    "q 0.04 0.11 0.19 rg 0 742 595 100 re f Q",
+    "q 0.78 0.61 0.14 rg 0 738 595 5 re f Q",
+    "q 1 1 1 rg 46 768 48 48 re f Q",
+    "q 0.04 0.11 0.19 rg 50 772 40 40 re f Q",
+    textCommand("KCS", 59, 790, 14, "F2", "1 1 1"),
+    textCommand("KCS OPPORTUNITY PROGRAM", 108, 792, 15, "F2", "1 1 1"),
+    textCommand("Rapport administratif officiel", 108, 772, 10, "F1", "0.86 0.90 0.96"),
+    "q 0.92 0.84 0.55 rg 62 250 470 200 re f Q",
+    textCommand("KCS", 200, 360, 86, "F2", "0.96 0.90 0.68"),
+    textCommand("DOCUMENT INTERNE", 154, 324, 32, "F2", "0.96 0.90 0.68"),
+    "q 1 1 1 rg 36 52 523 666 re f Q",
+    "q 0.04 0.11 0.19 RG 36 52 523 666 re S Q"
+  ];
+
+  lines.forEach((line, index) => {
+    const y = 696 - index * 13;
+    const font = index < 3 ? "F2" : "F1";
+    const size = index === 0 ? 14 : index < 3 ? 11 : 8;
+    commands.push(textCommand(line.slice(0, 118), 52, y, size, font, "0.06 0.13 0.22"));
+  });
+
+  commands.push(textCommand(`Page ${pageNumber} sur ${totalPages}`, 480, 30, 8, "F1", "0.35 0.40 0.48"));
+  commands.push(textCommand("Document genere automatiquement par la plateforme KCS.", 52, 30, 8, "F1", "0.35 0.40 0.48"));
+  return commands.join("\n");
+}
+
+function textCommand(text: string, x: number, y: number, size: number, font: "F1" | "F2", color: string) {
+  return `BT ${color} rg /${font} ${size} Tf ${x} ${y} Td (${escapePdf(text)}) Tj ET`;
+}
+
+function escapePdf(value: string) {
+  return toPdfText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function toPdfText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}function downloadBlob(filename: string, type: string, content: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
   const link = document.createElement("a");
   link.href = url;
@@ -1207,6 +1292,23 @@ function downloadBlob(filename: string, type: string, content: string) {
 
 function formatReportPeriod(period: ReportPeriod) {
   return ({ daily: "journalier", weekly: "hebdomadaire", monthly: "mensuel", yearly: "annuel" }[period]);
+}
+
+function formatFilters(filters: Record<string, string>) {
+  const labels: Record<string, string> = {
+    query: "Recherche",
+    province: "Province",
+    payment: "Paiement",
+    status: "Statut",
+    proof: "Preuve",
+    decision: "Decision",
+    sort: "Tri"
+  };
+
+  return Object.entries(filters)
+    .filter(([, value]) => value && value !== "all")
+    .map(([key, value]) => `${labels[key] ?? key}: ${value}`)
+    .join(" | ") || "Aucun filtre specifique";
 }
 
 function formatDate(value?: string) {
@@ -1670,3 +1772,4 @@ function NoticeBox({ notice }: { notice: NonNullable<Notice> }) {
 
   return <div className={`mt-5 rounded-md border px-3 py-2 text-sm ${toneClass}`}>{notice.text}</div>;
 }
+
