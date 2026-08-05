@@ -107,6 +107,8 @@ type View = "register" | "login" | "student" | "admin";
 type Notice = { tone: "success" | "error" | "info"; text: string } | null;
 type DialogState = { tone: "success" | "error" | "info"; title: string; message: string } | null;
 type StudentSession = { accessToken: string; email: string } | null;
+type AdminSession = { accessToken: string; email: string } | null;
+type LoginTarget = "student" | "admin";
 type AdminMetric = {
   id: string;
   first_name?: string;
@@ -171,6 +173,24 @@ const demoAdminMetrics: AdminMetric[] = [
 export default function Home() {
   const [view, setView] = useState<View>("register");
   const [studentSession, setStudentSession] = useState<StudentSession>(null);
+  const [adminSession, setAdminSession] = useState<AdminSession>(null);
+  const [loginTarget, setLoginTarget] = useState<LoginTarget>("student");
+
+  function openProtectedView(target: LoginTarget) {
+    setLoginTarget(target);
+
+    if (target === "student" && studentSession) {
+      setView("student");
+      return;
+    }
+
+    if (target === "admin" && adminSession) {
+      setView("admin");
+      return;
+    }
+
+    setView("login");
+  }
 
   return (
     <main className="min-h-screen bg-[#020814] text-[#f7f9fc]">
@@ -180,8 +200,8 @@ export default function Home() {
           <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
             <NavButton label="Postuler" active={view === "register"} onClick={() => setView("register")} />
             <NavButton label="Connexion" active={view === "login"} onClick={() => setView("login")} />
-            <NavButton label="Étudiant" active={view === "student"} onClick={() => setView("student")} />
-            <NavButton label="Administration" active={view === "admin"} onClick={() => setView("admin")} />
+            <NavButton label="Étudiant" active={view === "student"} onClick={() => openProtectedView("student")} />
+            <NavButton label="Administration" active={view === "admin"} onClick={() => openProtectedView("admin")} />
           </nav>
         </div>
       </header>
@@ -222,9 +242,15 @@ export default function Home() {
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {view === "register" && <RegistrationPanel />}
-        {view === "login" && <LoginPanel onStudent={(session) => { setStudentSession(session); setView("student"); }} onAdmin={() => setView("admin")} />}
+        {view === "login" && (
+          <LoginPanel
+            target={loginTarget}
+            onStudent={(session) => { setStudentSession(session); setView("student"); }}
+            onAdmin={(session) => { setAdminSession(session); setView("admin"); }}
+          />
+        )}
         {view === "student" && <StudentDashboard session={studentSession} />}
-        {view === "admin" && <AdminDashboard />}
+        {view === "admin" && (adminSession ? <AdminDashboard /> : <LoginRequiredPanel target="admin" onLogin={() => openProtectedView("admin")} />)}
       </section>
     </main>
   );
@@ -391,7 +417,7 @@ function RegistrationPanel() {
   );
 }
 
-function LoginPanel({ onStudent, onAdmin }: { onStudent: (session: { accessToken: string; email: string }) => void; onAdmin: () => void }) {
+function LoginPanel({ target, onStudent, onAdmin }: { target: LoginTarget; onStudent: (session: { accessToken: string; email: string }) => void; onAdmin: (session: { accessToken: string; email: string }) => void }) {
   const [notice, setNotice] = useState<Notice>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -412,18 +438,31 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: (session: { accessToken
       return;
     }
 
-    const session = result.data as { access_token?: string; user?: { email?: string } };
+    const session = result.data as { access_token?: string; user?: { email?: string; user_metadata?: { role?: string } } };
     setNotice({ tone: "success", text: "Connexion acceptée par Supabase Auth." });
 
     if (session.access_token) {
-      onStudent({ accessToken: session.access_token, email: session.user?.email ?? email });
+      const authenticatedSession = { accessToken: session.access_token, email: session.user?.email ?? email };
+      const role = session.user?.user_metadata?.role;
+
+      if (role === "admin") {
+        onAdmin(authenticatedSession);
+        return;
+      }
+
+      if (target === "admin") {
+        setNotice({ tone: "error", text: "Ce compte n'a pas le rôle administrateur." });
+        return;
+      }
+
+      onStudent(authenticatedSession);
     }
   }
 
   return (
     <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.75fr)]">
       <form onSubmit={handleSubmit} className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-        <SectionTitle icon={LockKeyhole} title="Connexion sécurisée" caption="Utiliser le compte réel créé dans Supabase Auth." />
+        <SectionTitle icon={LockKeyhole} title="Connexion sécurisée" caption={target === "admin" ? "Connectez-vous avec un compte administrateur Supabase." : "Connectez-vous avec le compte candidat créé lors de la candidature."} />
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4">
           <Field name="email" label="Adresse e-mail" placeholder="candidat@example.com" type="email" required />
@@ -440,7 +479,7 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: (session: { accessToken
           <button type="button" onClick={() => setNotice({ tone: "info", text: "Connectez-vous avec l'adresse e-mail et le mot de passe du candidat pour ouvrir l'espace étudiant." })} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
             Espace étudiant <ChevronRight className="h-4 w-4" />
           </button>
-          <button onClick={onAdmin} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
+          <button type="button" onClick={() => setNotice({ tone: "info", text: "Connectez-vous avec un compte administrateur. L'accès direct sans identifiants est désactivé." })} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
             Espace administration <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -519,11 +558,35 @@ function StudentDashboard({ session }: { session: StudentSession }) {
   );
 }
 
+function LoginRequiredPanel({ target, onLogin }: { target: LoginTarget; onLogin: () => void }) {
+  return (
+    <section className="mx-auto max-w-xl rounded-lg border border-white/10 bg-[#081b30] p-5 text-center shadow-premium">
+      <LockKeyhole className="mx-auto h-8 w-8 text-kcs-goldLight" />
+      <h2 className="mt-4 text-xl font-semibold">Connexion requise</h2>
+      <p className="mt-2 text-sm leading-6 text-kcs-muted">
+        {target === "admin" ? "L'espace administration est réservé aux comptes administrateurs." : "L'espace étudiant est réservé aux candidats connectés."}
+      </p>
+      <button type="button" onClick={onLogin} className="mt-5 h-10 rounded-md bg-kcs-gold px-4 text-sm font-bold text-[#08111f]">
+        Se connecter
+      </button>
+    </section>
+  );
+}
+
 function AdminDashboard() {
   const [notice, setNotice] = useState<Notice>({ tone: "info", text: "Chargement des statistiques Supabase..." });
   const [metrics, setMetrics] = useState<AdminMetric[]>(demoAdminMetrics);
   const [source, setSource] = useState("Données de démonstration");
   const [selectedApplication, setSelectedApplication] = useState<AdminMetric | null>(null);
+  const [filters, setFilters] = useState({
+    query: "",
+    province: "",
+    payment: "",
+    status: "",
+    proof: "",
+    decision: "",
+    sort: "recent"
+  });
 
   useEffect(() => {
     getAdminApplicationMetrics().then((result) => {
@@ -545,7 +608,11 @@ function AdminDashboard() {
     });
   }, []);
 
-  const stats = buildAdminStats(metrics);
+  const filteredMetrics = filterAdminMetrics(metrics, filters);
+  const stats = buildAdminStats(filteredMetrics);
+  const provinceOptions = uniqueValues(metrics.map((row) => row.province));
+  const paymentOptions = uniqueValues(metrics.map((row) => row.payment_operator));
+  const statusOptions = uniqueValues(metrics.map((row) => row.status));
 
   return (
     <div className="grid gap-6">
@@ -563,6 +630,32 @@ function AdminDashboard() {
         <Stat icon={ClipboardCheck} label="Dossiers en attente" value={`${stats.pendingRate}%`} />
         <Stat icon={CreditCard} label="Preuves jointes" value={`${stats.proofRate}%`} />
       </div>
+      <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+        <SectionTitle icon={ClipboardCheck} title="Recherche minutieuse" caption="Filtrer les candidatures et recalculer automatiquement tous les indicateurs." />
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <label className="min-w-0 xl:col-span-2">
+            <span className="mb-2 block text-sm font-medium">Recherche globale</span>
+            <input
+              value={filters.query}
+              onChange={(event) => setFilters((value) => ({ ...value, query: event.target.value }))}
+              placeholder="Nom, e-mail, téléphone, référence, ID transaction..."
+              className="h-10 w-full rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+            />
+          </label>
+          <FilterSelect label="Province" value={filters.province} options={provinceOptions} onChange={(province) => setFilters((value) => ({ ...value, province }))} />
+          <FilterSelect label="Paiement" value={filters.payment} options={paymentOptions} onChange={(payment) => setFilters((value) => ({ ...value, payment }))} />
+          <FilterSelect label="Statut" value={filters.status} options={statusOptions} formatter={formatStatus} onChange={(status) => setFilters((value) => ({ ...value, status }))} />
+          <FilterSelect label="Preuve" value={filters.proof} options={["avec_preuve", "sans_preuve"]} formatter={(value) => value === "avec_preuve" ? "Avec preuve" : "Sans preuve"} onChange={(proof) => setFilters((value) => ({ ...value, proof }))} />
+          <FilterSelect label="Décision" value={filters.decision} options={["decide", "non_decide"]} formatter={(value) => value === "decide" ? "Résultat communiqué" : "Sans résultat"} onChange={(decision) => setFilters((value) => ({ ...value, decision }))} />
+          <FilterSelect label="Tri" value={filters.sort} options={["recent", "ancien", "province", "statut"]} formatter={(value) => ({ recent: "Plus récents", ancien: "Plus anciens", province: "Province", statut: "Statut" }[value] ?? value)} onChange={(sort) => setFilters((value) => ({ ...value, sort }))} allowEmpty={false} />
+        </div>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-kcs-muted">{filteredMetrics.length} candidature(s) trouvée(s) sur {metrics.length}.</p>
+          <button type="button" onClick={() => setFilters({ query: "", province: "", payment: "", status: "", proof: "", decision: "", sort: "recent" })} className="h-10 rounded-md border border-white/10 px-4 text-sm font-semibold text-kcs-muted hover:bg-white/[0.06] hover:text-white">
+            Réinitialiser
+          </button>
+        </div>
+      </section>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <ChartPanel title="Candidatures par province" subtitle="Répartition territoriale RDC">
           <ResponsiveContainer width="100%" height={310}>
@@ -663,7 +756,7 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {metrics.map((row) => (
+                {filteredMetrics.map((row) => (
                   <tr key={row.id} onClick={() => setSelectedApplication(row)} className="cursor-pointer border-t border-white/10 hover:bg-white/[0.04]">
                     <td className="px-4 py-3 font-medium">{`${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || "Candidat"}</td>
                     <td className="px-4 py-3 text-kcs-muted">{row.province || "Non renseignée"}</td>
@@ -671,6 +764,11 @@ function AdminDashboard() {
                     <td className="px-4 py-3"><StatusBadge label={formatStatus(row.status)} /></td>
                   </tr>
                 ))}
+                {!filteredMetrics.length ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-kcs-muted">Aucune candidature ne correspond aux critères.</td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
@@ -772,6 +870,58 @@ function buildAdminStats(rows: AdminMetric[]) {
   };
 }
 
+function filterAdminMetrics(rows: AdminMetric[], filters: { query: string; province: string; payment: string; status: string; proof: string; decision: string; sort: string }) {
+  const query = normalizeSearch(filters.query);
+
+  return rows
+    .filter((row) => {
+      const searchable = normalizeSearch([
+        row.first_name,
+        row.last_name,
+        row.email,
+        row.phone,
+        row.province,
+        row.payment_operator,
+        row.transaction_id,
+        row.payment_reference,
+        row.status,
+        row.identity_number
+      ].filter(Boolean).join(" "));
+
+      return (
+        (!query || searchable.includes(query))
+        && (!filters.province || row.province === filters.province)
+        && (!filters.payment || row.payment_operator === filters.payment)
+        && (!filters.status || row.status === filters.status)
+        && (!filters.proof || (filters.proof === "avec_preuve" ? Boolean(row.payment_proof_path) : !row.payment_proof_path))
+        && (!filters.decision || (filters.decision === "decide" ? Boolean(row.result_message || row.admin_message) : !row.result_message && !row.admin_message))
+      );
+    })
+    .sort((a, b) => {
+      if (filters.sort === "ancien") {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+
+      if (filters.sort === "province") {
+        return (a.province || "").localeCompare(b.province || "", "fr");
+      }
+
+      if (filters.sort === "statut") {
+        return formatStatus(a.status).localeCompare(formatStatus(b.status), "fr");
+      }
+
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+}
+
+function normalizeSearch(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function uniqueValues(values: Array<string | undefined>) {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort((a, b) => a.localeCompare(b, "fr"));
+}
+
 function buildProvincePerformance(rows: AdminMetric[]) {
   const map = new Map<string, { total: number; accepted: number }>();
 
@@ -830,6 +980,24 @@ function ChartPanel({ title, subtitle, children }: { title: string; subtitle: st
       </div>
       {children}
     </section>
+  );
+}
+
+function FilterSelect({ label, value, options, onChange, formatter = (option) => option, allowEmpty = true }: { label: string; value: string; options: string[]; onChange: (value: string) => void; formatter?: (option: string) => string; allowEmpty?: boolean }) {
+  return (
+    <label className="min-w-0">
+      <span className="mb-2 block text-sm font-medium">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+      >
+        {allowEmpty ? <option value="">Tous</option> : null}
+        {options.map((option) => (
+          <option key={option} value={option}>{formatter(option)}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
