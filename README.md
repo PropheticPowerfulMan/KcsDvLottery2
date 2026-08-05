@@ -26,6 +26,15 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+For the static build that will be delivered, use:
+
+```bash
+npm run build
+npm run preview
+```
+
+Open `http://localhost:4173`. This serves the generated `out/` folder over HTTP so CSS and JavaScript load consistently. If you double-click a file, use `out/index.html`; the root `index.html` only redirects there.
+
 ## Logo Replacement
 
 The current logo lives at `public/branding/kcs-logo-placeholder.png` and is copied from the supplied `public/kcs-icon-512.png` asset. Replace that file with the official production KCS logo using the same filename to avoid layout changes.
