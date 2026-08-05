@@ -109,7 +109,8 @@ type DialogState = { tone: "success" | "error" | "info"; title: string; message:
 type StudentSession = { accessToken: string; email: string } | null;
 type AdminSession = { accessToken: string; email: string } | null;
 type LoginTarget = "student" | "admin";
-type AdminTab = "resume" | "graphiques" | "candidatures" | "controle";
+type AdminTab = "resume" | "graphiques" | "candidatures" | "rapports" | "controle";
+type ReportPeriod = "daily" | "weekly" | "monthly" | "yearly";
 type AdminMetric = {
   id: string;
   first_name?: string;
@@ -581,6 +582,7 @@ function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
   const [selectedApplication, setSelectedApplication] = useState<AdminMetric | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("resume");
   const [isMutating, setIsMutating] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState<ReportPeriod>("weekly");
   const [filters, setFilters] = useState({
     query: "",
     province: "",
@@ -613,6 +615,8 @@ function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
 
   const filteredMetrics = filterAdminMetrics(metrics, filters);
   const stats = buildAdminStats(filteredMetrics);
+  const reportRows = filterRowsByPeriod(filteredMetrics, reportPeriod);
+  const reportStats = buildAdminStats(reportRows);
   const provinceOptions = uniqueValues(metrics.map((row) => row.province));
   const paymentOptions = uniqueValues(metrics.map((row) => row.payment_operator));
   const statusOptions = uniqueValues(metrics.map((row) => row.status));
@@ -784,6 +788,61 @@ function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
           </div>
         </section>
       </div>
+      ) : null}
+      {activeTab === "rapports" ? (
+        <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+          <SectionTitle icon={FileCheck2} title="Rapports administratifs" caption="Télécharger un rapport détaillé selon la période et les filtres actifs." />
+          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div className="rounded-md border border-white/10 bg-[#061426] p-4">
+              <FilterSelect
+                label="Période"
+                value={reportPeriod}
+                options={["daily", "weekly", "monthly", "yearly"]}
+                formatter={(value) => ({ daily: "Journalier", weekly: "Hebdomadaire", monthly: "Mensuel", yearly: "Annuel" }[value] ?? value)}
+                onChange={(value) => setReportPeriod(value as ReportPeriod)}
+                allowEmpty={false}
+              />
+              <div className="mt-4 grid gap-3">
+                <MiniInfo label="Candidatures du rapport" value={String(reportRows.length)} />
+                <MiniInfo label="Taux d'acceptation" value={`${reportStats.approvalRate}%`} />
+                <MiniInfo label="Paiements tracés" value={`${reportStats.paymentRate}%`} />
+              </div>
+            </div>
+            <div className="rounded-md border border-white/10 bg-[#061426] p-4">
+              <h3 className="font-semibold text-white">Formats disponibles</h3>
+              <p className="mt-2 text-sm leading-6 text-kcs-muted">Chaque fichier contient les statistiques, les filtres appliqués et la liste détaillée des candidatures visibles.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <button type="button" onClick={() => downloadReport("doc", reportRows, reportStats, reportPeriod, filters)} className="h-10 rounded-md bg-kcs-gold px-4 text-sm font-bold text-[#08111f]">Word</button>
+                <button type="button" onClick={() => downloadReport("xls", reportRows, reportStats, reportPeriod, filters)} className="h-10 rounded-md bg-kcs-success px-4 text-sm font-bold text-[#061426]">Excel</button>
+                <button type="button" onClick={() => downloadReport("pdf", reportRows, reportStats, reportPeriod, filters)} className="h-10 rounded-md border border-white/10 px-4 text-sm font-bold text-white hover:bg-white/[0.06]">PDF</button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 overflow-x-auto rounded-md border border-white/10">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-white/[0.04] text-kcs-muted">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Candidat</th>
+                  <th className="px-4 py-3 font-medium">Province</th>
+                  <th className="px-4 py-3 font-medium">Paiement</th>
+                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <th className="px-4 py-3 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportRows.slice(0, 10).map((row) => (
+                  <tr key={row.id} className="border-t border-white/10">
+                    <td className="px-4 py-3 font-medium">{`${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || "Candidat"}</td>
+                    <td className="px-4 py-3 text-kcs-muted">{row.province || "Non renseignée"}</td>
+                    <td className="px-4 py-3 text-kcs-muted">{row.payment_operator || "Non renseigné"}</td>
+                    <td className="px-4 py-3"><StatusBadge label={formatStatus(row.status)} /></td>
+                    <td className="px-4 py-3 text-kcs-muted">{formatDate(row.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       ) : null}
       {activeTab === "candidatures" ? (
         <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
@@ -1017,6 +1076,151 @@ function buildProvincePerformance(rows: AdminMetric[]) {
   })).sort((a, b) => b.taux - a.taux || b.total - a.total);
 }
 
+function filterRowsByPeriod(rows: AdminMetric[], period: ReportPeriod) {
+  const now = new Date();
+  const start = new Date(now);
+
+  if (period === "daily") {
+    start.setHours(0, 0, 0, 0);
+  } else if (period === "weekly") {
+    start.setDate(now.getDate() - 7);
+  } else if (period === "monthly") {
+    start.setMonth(now.getMonth() - 1);
+  } else {
+    start.setFullYear(now.getFullYear() - 1);
+  }
+
+  return rows.filter((row) => new Date(row.created_at).getTime() >= start.getTime());
+}
+
+function downloadReport(format: "doc" | "xls" | "pdf", rows: AdminMetric[], stats: ReturnType<typeof buildAdminStats>, period: ReportPeriod, filters: { query: string; province: string; payment: string; status: string; proof: string; decision: string; sort: string }) {
+  const title = `Rapport ${formatReportPeriod(period)} KCS`;
+  const filename = `rapport-kcs-${period}-${new Date().toISOString().slice(0, 10)}`;
+
+  if (format === "pdf") {
+    downloadBlob(`${filename}.pdf`, "application/pdf", buildSimplePdf(buildReportPlainText(title, rows, stats, filters)));
+    return;
+  }
+
+  const html = buildReportHtml(title, rows, stats, filters);
+  downloadBlob(
+    `${filename}.${format}`,
+    format === "doc" ? "application/msword" : "application/vnd.ms-excel",
+    `\ufeff${html}`
+  );
+}
+
+function buildReportHtml(title: string, rows: AdminMetric[], stats: ReturnType<typeof buildAdminStats>, filters: { query: string; province: string; payment: string; status: string; proof: string; decision: string; sort: string }) {
+  const summaryRows = [
+    ["Candidatures", String(stats.total)],
+    ["Provinces actives", String(stats.provinceCount)],
+    ["Taux d'acceptation", `${stats.approvalRate}%`],
+    ["Paiements tracés", `${stats.paymentRate}%`],
+    ["Preuves jointes", `${stats.proofRate}%`],
+    ["Complétude moyenne", `${stats.completionRate}%`]
+  ];
+
+  return `
+    <html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
+    <body>
+      <h1>${escapeHtml(title)}</h1>
+      <p>Généré le ${escapeHtml(new Date().toLocaleString("fr-FR"))}</p>
+      <h2>Filtres</h2>
+      <p>${escapeHtml(JSON.stringify(filters))}</p>
+      <h2>Statistiques</h2>
+      <table border="1" cellspacing="0" cellpadding="6">
+        ${summaryRows.map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`).join("")}
+      </table>
+      <h2>Détails des candidatures</h2>
+      <table border="1" cellspacing="0" cellpadding="6">
+        <tr><th>Candidat</th><th>Email</th><th>Téléphone</th><th>Province</th><th>Paiement</th><th>ID transaction</th><th>Statut</th><th>Référence</th><th>Motivation</th><th>Résultat</th><th>Date</th></tr>
+        ${rows.map((row) => `<tr>
+          <td>${escapeHtml(`${row.first_name ?? ""} ${row.last_name ?? ""}`.trim())}</td>
+          <td>${escapeHtml(row.email ?? "")}</td>
+          <td>${escapeHtml(row.phone ?? "")}</td>
+          <td>${escapeHtml(row.province ?? "")}</td>
+          <td>${escapeHtml(row.payment_operator ?? "")}</td>
+          <td>${escapeHtml(row.transaction_id ?? "")}</td>
+          <td>${escapeHtml(formatStatus(row.status))}</td>
+          <td>${escapeHtml(row.payment_reference ?? "")}</td>
+          <td>${escapeHtml(row.motivation ?? "")}</td>
+          <td>${escapeHtml(row.result_message ?? row.admin_message ?? "")}</td>
+          <td>${escapeHtml(formatDate(row.created_at))}</td>
+        </tr>`).join("")}
+      </table>
+    </body></html>
+  `;
+}
+
+function buildReportPlainText(title: string, rows: AdminMetric[], stats: ReturnType<typeof buildAdminStats>, filters: Record<string, string>) {
+  return [
+    title,
+    `Généré le ${new Date().toLocaleString("fr-FR")}`,
+    "",
+    "Filtres",
+    JSON.stringify(filters),
+    "",
+    "Statistiques",
+    `Candidatures: ${stats.total}`,
+    `Provinces actives: ${stats.provinceCount}`,
+    `Taux d'acceptation: ${stats.approvalRate}%`,
+    `Paiements tracés: ${stats.paymentRate}%`,
+    `Preuves jointes: ${stats.proofRate}%`,
+    "",
+    "Détails",
+    ...rows.map((row) => `${row.first_name ?? ""} ${row.last_name ?? ""} | ${row.province ?? ""} | ${row.payment_operator ?? ""} | ${row.transaction_id ?? ""} | ${formatStatus(row.status)} | ${row.payment_reference ?? ""} | ${formatDate(row.created_at)}`)
+  ].join("\n");
+}
+
+function buildSimplePdf(text: string) {
+  const lines = text.split("\n").flatMap((line) => line.match(/.{1,90}/g) ?? [""]);
+  const escapedLines = lines.map((line) => `(${line.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)")}) Tj`).join(" T* ");
+  const stream = `BT /F1 10 Tf 40 790 Td 12 TL ${escapedLines} ET`;
+  const objects = [
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
+    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+    `5 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
+  ];
+  let offset = "%PDF-1.4\n".length;
+  const xref = ["0000000000 65535 f "];
+  const body = objects.map((object) => {
+    xref.push(`${String(offset).padStart(10, "0")} 00000 n `);
+    offset += object.length + 1;
+    return object;
+  }).join("\n");
+  const xrefStart = offset;
+  return `%PDF-1.4\n${body}\nxref\n0 ${xref.length}\n${xref.join("\n")}\ntrailer << /Size ${xref.length} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+}
+
+function downloadBlob(filename: string, type: string, content: string) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function formatReportPeriod(period: ReportPeriod) {
+  return ({ daily: "journalier", weekly: "hebdomadaire", monthly: "mensuel", yearly: "annuel" }[period]);
+}
+
+function formatDate(value?: string) {
+  return value ? new Date(value).toLocaleDateString("fr-FR") : "";
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function groupRows(rows: AdminMetric[], getKey: (row: AdminMetric) => string) {
   const groups = new Map<string, number>();
 
@@ -1113,6 +1317,7 @@ function AdminTabs({ activeTab, onChange }: { activeTab: AdminTab; onChange: (ta
     { id: "resume", label: "Résumé" },
     { id: "graphiques", label: "Graphiques" },
     { id: "candidatures", label: "Candidatures" },
+    { id: "rapports", label: "Rapports" },
     { id: "controle", label: "Contrôle" }
   ];
 
