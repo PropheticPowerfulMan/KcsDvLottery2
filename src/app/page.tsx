@@ -6,6 +6,8 @@ import {
   ChevronRight,
   ClipboardCheck,
   CreditCard,
+  Eye,
+  EyeOff,
   FileCheck2,
   GraduationCap,
   Landmark,
@@ -175,6 +177,7 @@ function RegistrationPanel() {
 function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: () => void }) {
   const [notice, setNotice] = useState<Notice>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -197,7 +200,7 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4">
           <Field name="email" label="Adresse e-mail" placeholder="candidat@example.com" type="email" required />
-          <Field name="password" label="Mot de passe" placeholder="Mot de passe" type="password" required />
+          <PasswordField isVisible={isPasswordVisible} onToggle={() => setIsPasswordVisible((value) => !value)} />
           <button disabled={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426] disabled:cursor-not-allowed disabled:opacity-60">
             <LockKeyhole className="h-4 w-4" />
             {isSubmitting ? "Connexion..." : "Se connecter"}
@@ -350,6 +353,35 @@ function ChecklistItem({ children }: { children: React.ReactNode }) {
       <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-kcs-success" />
       <span className="min-w-0 break-words">{children}</span>
     </div>
+  );
+}
+
+function PasswordField({ isVisible, onToggle }: { isVisible: boolean; onToggle: () => void }) {
+  const Icon = isVisible ? EyeOff : Eye;
+  const label = isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe";
+
+  return (
+    <label className="min-w-0">
+      <span className="mb-2 block text-sm font-medium">Mot de passe</span>
+      <div className="flex h-10 min-w-0 items-center rounded-md border border-white/10 bg-[#061426] focus-within:border-kcs-gold/70 focus-within:ring-2 focus-within:ring-kcs-gold/20">
+        <input
+          name="password"
+          type={isVisible ? "text" : "password"}
+          required
+          placeholder="Mot de passe"
+          className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70"
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={label}
+          title={label}
+          className="grid h-full w-10 shrink-0 place-items-center rounded-r-md text-kcs-muted hover:bg-white/[0.06] hover:text-white"
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      </div>
+    </label>
   );
 }
 
