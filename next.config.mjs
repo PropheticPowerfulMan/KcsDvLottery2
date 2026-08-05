@@ -4,7 +4,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
 
 const nextConfig = {
   reactStrictMode: true,
-  output: "export",
+  output: isDevelopment ? undefined : "export",
   basePath: isGitHubPages ? "/KcsDvLottery2" : "",
   assetPrefix: isDevelopment ? undefined : isGitHubPages ? "/KcsDvLottery2/" : "./",
   env: {

@@ -24,16 +24,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:4173`. The default local command builds the static export, verifies that CSS is present, and serves `out/` over HTTP.
 
-For the static build that will be delivered, use:
-
-```bash
-npm run build
-npm run preview
-```
-
-Open `http://localhost:4173`. This serves the generated `out/` folder over HTTP so CSS and JavaScript load consistently. If you double-click a file, use `out/index.html`; the root `index.html` only redirects there.
+For framework hot reload only, use `npm run dev:next` and open `http://localhost:3000`. For delivery testing, prefer `npm run dev`.
 
 ## Logo Replacement
 
