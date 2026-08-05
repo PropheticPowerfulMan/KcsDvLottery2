@@ -34,10 +34,26 @@ const eligibilityRules = [
 ];
 
 const paymentMethods = [
-  { name: "M-Pesa", status: "Prêt à connecter", detail: "Les identifiants marchands et un webhook signé sont requis avant l'encaissement réel." },
-  { name: "Airtel Money", status: "Prêt à connecter", detail: "Utiliser l'API marchande officielle ou un agrégateur certifié." },
-  { name: "Orange Money", status: "Prêt à connecter", detail: "Nécessite un compte marchand, un secret de rappel et des exports de rapprochement." },
-  { name: "Vérification manuelle", status: "Disponible", detail: "Référence de transaction, preuve de paiement, revue finance et journal d'audit." }
+  { name: "M-Pesa", status: "Vérification manuelle", detail: "Le candidat paie depuis son téléphone, saisit l'ID de transaction et ajoute la capture ou le reçu." },
+  { name: "Airtel Money", status: "Vérification manuelle", detail: "La finance compare l'ID de transaction avec le relevé du compte marchand." },
+  { name: "Orange Money", status: "Vérification manuelle", detail: "La preuve est conservée dans Supabase Storage avant validation administrative." },
+  { name: "Autre dépôt mobile", status: "Disponible", detail: "Utiliser uniquement si le reçu contient un numéro de transaction vérifiable." }
+];
+
+const birthYears = Array.from({ length: 90 }, (_, index) => String(new Date().getFullYear() - 10 - index));
+const birthMonths = [
+  { value: "01", label: "Janvier" },
+  { value: "02", label: "Février" },
+  { value: "03", label: "Mars" },
+  { value: "04", label: "Avril" },
+  { value: "05", label: "Mai" },
+  { value: "06", label: "Juin" },
+  { value: "07", label: "Juillet" },
+  { value: "08", label: "Août" },
+  { value: "09", label: "Septembre" },
+  { value: "10", label: "Octobre" },
+  { value: "11", label: "Novembre" },
+  { value: "12", label: "Décembre" }
 ];
 
 type View = "register" | "login" | "student" | "admin";
@@ -122,14 +138,30 @@ function RegistrationPanel() {
     setNotice({ tone: "info", text: "Création du compte candidat..." });
 
     const formData = new FormData(event.currentTarget);
+    const birthDay = String(formData.get("birth_day") ?? "").padStart(2, "0");
+    const birthMonth = String(formData.get("birth_month") ?? "").padStart(2, "0");
+    const birthYear = String(formData.get("birth_year") ?? "");
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
     const firstName = String(formData.get("first_name") ?? "");
     const lastName = String(formData.get("last_name") ?? "");
     const proof = formData.get("payment_proof");
     const proofFile = proof instanceof File && proof.size > 0 ? proof : null;
-    const ignoredFields = new Set(["password", "payment_proof"]);
+    const ignoredFields = new Set(["password", "payment_proof", "birth_day", "birth_month", "birth_year"]);
     const payload = Object.fromEntries(Array.from(formData.entries()).filter(([key]) => !ignoredFields.has(key)).map(([key, value]) => [key, String(value)])) as Record<string, string>;
+    const dateOfBirth = `${birthYear}-${birthMonth}-${birthDay}`;
+    const parsedDate = new Date(`${dateOfBirth}T00:00:00`);
+
+    if (
+      Number.isNaN(parsedDate.getTime())
+      || parsedDate.getFullYear() !== Number(birthYear)
+      || parsedDate.getMonth() + 1 !== Number(birthMonth)
+      || parsedDate.getDate() !== Number(birthDay)
+    ) {
+      setIsSubmitting(false);
+      setNotice({ tone: "error", text: "La date de naissance choisie n'est pas valide." });
+      return;
+    }
 
     const signupResult = await signUpWithPassword(email, password, `${firstName} ${lastName}`.trim());
 
@@ -159,6 +191,7 @@ function RegistrationPanel() {
     setNotice({ tone: "info", text: "Envoi du dossier en cours..." });
     const result = await insertApplication({
       ...payload,
+      date_of_birth: dateOfBirth,
       payment_reference: reference,
       payment_proof_path: paymentProofPath,
       status: "submitted"
@@ -180,7 +213,7 @@ function RegistrationPanel() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field name="first_name" label="Prénom" placeholder="Grace" required />
           <Field name="last_name" label="Nom" placeholder="Mbuyi" required />
-          <Field name="date_of_birth" label="Date de naissance" type="date" required />
+          <BirthDateFields />
           <Field name="country_of_birth" label="Pays de naissance" placeholder="RD Congo" required />
           <Field name="email" label="Adresse e-mail" type="email" placeholder="candidat@example.com" required />
           <PasswordField
@@ -194,9 +227,13 @@ function RegistrationPanel() {
           <Field name="identity_number" label="Numéro passeport ou carte d'identité" placeholder="Référence du document" required />
           <Field name="guardian_name" label="Nom complet du responsable" placeholder="Parent ou responsable" />
           <Field name="guardian_phone" label="Téléphone du responsable" placeholder="+243..." />
-          <label className="min-w-0 sm:col-span-2">
+          <label className="min-w-0">
             <span className="mb-2 block text-sm font-medium">Adresse de résidence</span>
-            <textarea name="residential_address" required className="min-h-[96px] w-full rounded-md border border-white/10 bg-[#061426] px-3 py-2 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="Ville, commune, avenue, numéro" />
+            <input name="residential_address" required className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="Ville, commune, quartier" />
+          </label>
+          <label className="min-w-0 sm:col-span-2">
+            <span className="mb-2 block text-sm font-medium">Motivation</span>
+            <textarea name="motivation" required className="min-h-[88px] w-full rounded-md border border-white/10 bg-[#061426] px-3 py-2 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="Expliquez brièvement la raison de votre candidature" />
           </label>
         </div>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -372,20 +409,40 @@ function PaymentPanel({ reference }: { reference: string }) {
           <ReceiptText className="h-5 w-5 shrink-0 text-kcs-goldLight" />
           <p className="min-w-0 break-words font-semibold">Référence manuelle : {reference}</p>
         </div>
+        <p className="mt-2 text-sm leading-6 text-kcs-muted">
+          Payez avec le réseau choisi, gardez le reçu, puis indiquez l'ID de transaction et ajoutez la preuve. La finance validera le paiement avant la revue finale.
+        </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="min-w-0">
+            <span className="mb-2 block text-sm font-medium">Réseau mobile</span>
+            <select
+              form="application-form"
+              name="payment_operator"
+              required
+              defaultValue=""
+              className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+            >
+              <option value="" disabled>Choisir</option>
+              <option value="M-Pesa">M-Pesa</option>
+              <option value="Airtel Money">Airtel Money</option>
+              <option value="Orange Money">Orange Money</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </label>
           <label className="min-w-0">
             <span className="mb-2 block text-sm font-medium">ID de transaction</span>
             <input
               form="application-form"
               name="transaction_id"
+              required
               placeholder="Référence de l'opérateur"
               className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
             />
           </label>
-          <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06]">
+          <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06] sm:col-span-2">
             <Upload className="h-4 w-4" />
             Ajouter une preuve
-            <input form="application-form" name="payment_proof" type="file" accept="image/*,.pdf" className="sr-only" />
+            <input form="application-form" name="payment_proof" type="file" accept="image/*,.pdf" required className="sr-only" />
           </label>
         </div>
       </div>
@@ -446,6 +503,40 @@ function ChecklistItem({ children }: { children: React.ReactNode }) {
       <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-kcs-success" />
       <span className="min-w-0 break-words">{children}</span>
     </div>
+  );
+}
+
+function BirthDateFields() {
+  const days = Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, "0"));
+
+  return (
+    <fieldset className="min-w-0">
+      <legend className="mb-2 block text-sm font-medium">Date de naissance</legend>
+      <div className="grid grid-cols-[0.7fr_1.2fr_0.9fr] gap-2">
+        <SelectField name="birth_day" label="Jour" options={days.map((day) => ({ value: day, label: day }))} />
+        <SelectField name="birth_month" label="Mois" options={birthMonths} />
+        <SelectField name="birth_year" label="Année" options={birthYears.map((year) => ({ value: year, label: year }))} />
+      </div>
+    </fieldset>
+  );
+}
+
+function SelectField({ name, label, options }: { name: string; label: string; options: { value: string; label: string }[] }) {
+  return (
+    <label className="min-w-0">
+      <span className="sr-only">{label}</span>
+      <select
+        name={name}
+        required
+        defaultValue=""
+        className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-2 text-sm text-white outline-none focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+      >
+        <option value="" disabled>{label}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 

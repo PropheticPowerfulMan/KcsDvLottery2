@@ -17,7 +17,9 @@ create table if not exists public.applications (
   guardian_name text,
   guardian_phone text,
   residential_address text not null,
+  motivation text,
   payment_reference text not null unique,
+  payment_operator text,
   transaction_id text,
   payment_proof_path text,
   admin_message text,
@@ -46,6 +48,8 @@ create table if not exists public.applications (
 
 alter table public.applications
   add column if not exists user_id uuid references auth.users(id) on delete set null,
+  add column if not exists motivation text,
+  add column if not exists payment_operator text,
   add column if not exists transaction_id text,
   add column if not exists payment_proof_path text,
   add column if not exists admin_message text,
@@ -143,12 +147,16 @@ to anon, authenticated
 with check (
   status = 'submitted'
   and payment_reference like 'KCS-2026-%'
-  and length(trim(first_name)) >= 2
-  and length(trim(last_name)) >= 2
+  and length(trim(first_name)) >= 1
+  and length(trim(last_name)) >= 1
   and length(trim(email)) >= 5
-  and length(trim(phone)) >= 6
-  and length(trim(identity_number)) >= 3
-  and length(trim(residential_address)) >= 8
+  and length(trim(phone)) >= 5
+  and length(trim(identity_number)) >= 2
+  and length(trim(residential_address)) >= 3
+  and (motivation is null or length(trim(motivation)) >= 10)
+  and (payment_operator is null or length(trim(payment_operator)) >= 2)
+  and (transaction_id is null or length(trim(transaction_id)) >= 3)
+  and (payment_proof_path is null or length(trim(payment_proof_path)) >= 3)
 );
 
 -- Optional authenticated applicant read access.
@@ -200,6 +208,6 @@ using (bucket_id = 'payment-proofs');
 
 grant usage on schema public to anon, authenticated;
 grant insert on public.applications to anon, authenticated;
-grant update (transaction_id, payment_proof_path) on public.applications to authenticated;
+grant update (payment_operator, transaction_id, payment_proof_path) on public.applications to authenticated;
 grant select on public.applications to authenticated;
 grant select, update on public.result_email_queue to service_role;
