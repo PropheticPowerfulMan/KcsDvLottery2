@@ -1,9 +1,7 @@
 "use client";
 
 import {
-  AlertTriangle,
   BadgeCheck,
-  BarChart3,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
@@ -19,32 +17,29 @@ import {
   Users,
   type LucideIcon
 } from "lucide-react";
-import { useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { KcsBrand } from "@/components/branding/kcs-brand";
+import { insertApplication, isSupabaseConfigured, signInWithPassword } from "@/lib/supabase-rest";
 
-const paymentReference = "KCS-2026-104782";
+const paymentReferencePrefix = "KCS-2026";
 
 const eligibilityRules = [
   "Applicant must be a KCS graduate or approved partner-school candidate.",
   "Applicant must have a valid identity document and accurate civil information.",
   "Applicant must provide education history, guardian contacts, and reachable phone numbers.",
   "Application fees are reviewed only after payment evidence is matched by finance.",
-  "Final eligibility criteria will be replaced with the official company policy."
+  "Final eligibility is confirmed by the administration after document review."
 ];
 
 const paymentMethods = [
-  { name: "M-Pesa", status: "API-ready", detail: "Official merchant credentials and signed webhook are required before activation." },
-  { name: "Airtel Money", status: "API-ready", detail: "Can be connected through the official merchant API or a certified aggregator." },
-  { name: "Orange Money", status: "API-ready", detail: "Requires merchant account, callback secret, and finance reconciliation exports." },
-  { name: "Secure manual payment", status: "Available now", detail: "Unique reference, proof upload, double review, and audit trail." }
-];
-
-const demoCredentials = [
-  { role: "Student", email: "student.demo@kcs.app", password: "Student@2026" },
-  { role: "Administrator", email: "admin.demo@kcs.app", password: "Admin@2026" }
+  { name: "M-Pesa", status: "Ready to connect", detail: "Merchant credentials and signed webhook are required before live collection." },
+  { name: "Airtel Money", status: "Ready to connect", detail: "Use the official merchant API or a certified aggregator." },
+  { name: "Orange Money", status: "Ready to connect", detail: "Requires merchant account, callback secret, and reconciliation exports." },
+  { name: "Manual verification", status: "Available", detail: "Transaction reference, proof upload, finance review, and audit trail." }
 ];
 
 type View = "register" | "login" | "student" | "admin";
+type Notice = { tone: "success" | "error" | "info"; text: string } | null;
 
 export default function Home() {
   const [view, setView] = useState<View>("register");
@@ -55,9 +50,10 @@ export default function Home() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <KcsBrand />
           <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
+            <NavButton label="Apply" active={view === "register"} onClick={() => setView("register")} />
             <NavButton label="Login" active={view === "login"} onClick={() => setView("login")} />
-            <NavButton label="Student demo" active={view === "student"} onClick={() => setView("student")} />
-            <NavButton label="Admin demo" active={view === "admin"} onClick={() => setView("admin")} />
+            <NavButton label="Student" active={view === "student"} onClick={() => setView("student")} />
+            <NavButton label="Admin" active={view === "admin"} onClick={() => setView("admin")} />
           </nav>
         </div>
       </header>
@@ -65,39 +61,31 @@ export default function Home() {
       <section className="border-b border-white/10 bg-[#061426]">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 md:py-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(360px,0.58fr)] lg:px-8">
           <div className="min-w-0 pt-2">
-            <p className="text-sm font-semibold text-kcs-goldLight">Opportunity Program</p>
+            <p className="text-sm font-semibold text-kcs-goldLight">Official Opportunity Program</p>
             <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-normal text-white sm:text-4xl lg:text-5xl">
-              Apply, verify, and track your DV-style opportunity file.
+              Submit and track a real applicant file.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-kcs-muted">
-              Create an applicant account, complete a structured registration form, review provisional eligibility, and submit payment evidence through a controlled verification workflow.
+              Applicants can create a file, submit identity and education information, attach payment evidence, and wait for a controlled administrative review.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <Metric label="Payment reference" value={paymentReference} />
-              <Metric label="Student demo" value="Ready" />
-              <Metric label="Admin demo" value="Ready" />
+              <Metric label="Database" value={isSupabaseConfigured ? "Connected" : "Not configured"} />
+              <Metric label="Reference format" value={`${paymentReferencePrefix}-#####`} />
+              <Metric label="Access mode" value="Production" />
             </div>
           </div>
 
           <div className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
             <div className="mb-4 grid grid-cols-2 gap-2">
-              <ActionButton active={view === "register"} label="Create account" icon={UserPlus} onClick={() => setView("register")} />
-              <ActionButton active={view === "login"} label="Login" icon={LockKeyhole} onClick={() => setView("login")} />
+              <ActionButton active={view === "register"} label="Create file" icon={UserPlus} onClick={() => setView("register")} />
+              <ActionButton active={view === "login"} label="Secure login" icon={LockKeyhole} onClick={() => setView("login")} />
             </div>
             <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <h2 className="text-base font-semibold">Demo access</h2>
-              <p className="mt-1 text-sm leading-6 text-kcs-muted">Use these accounts to preview the applicant and administration dashboards.</p>
+              <h2 className="text-base font-semibold">System status</h2>
               <div className="mt-4 grid gap-3">
-                {demoCredentials.map((account) => (
-                  <div key={account.role} className="min-w-0 rounded-md border border-white/10 bg-[#061426] p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium">{account.role}</p>
-                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-xs text-kcs-muted">demo</span>
-                    </div>
-                    <p className="mt-2 break-all text-sm text-kcs-muted">{account.email}</p>
-                    <p className="mt-1 break-all font-mono text-sm">{account.password}</p>
-                  </div>
-                ))}
+                <StatusRow label="Supabase REST" value={isSupabaseConfigured ? "Configured" : "Missing environment variables"} />
+                <StatusRow label="Applicant intake" value="Live form" />
+                <StatusRow label="Administration" value="Protected review workflow" />
               </div>
             </div>
           </div>
@@ -108,41 +96,63 @@ export default function Home() {
         {view === "register" && <RegistrationPanel />}
         {view === "login" && <LoginPanel onStudent={() => setView("student")} onAdmin={() => setView("admin")} />}
         {view === "student" && <StudentDashboard />}
-        {view === "admin" && <AdminDemoDashboard />}
+        {view === "admin" && <AdminDashboard />}
       </section>
     </main>
   );
 }
 
 function RegistrationPanel() {
+  const [notice, setNotice] = useState<Notice>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const reference = useMemo(() => `${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`, []);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setNotice({ tone: "info", text: "Submitting applicant file..." });
+
+    const formData = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
+    const result = await insertApplication({ ...payload, payment_reference: reference, status: "submitted" });
+
+    setIsSubmitting(false);
+    setNotice(
+      result.ok
+        ? { tone: "success", text: `Application submitted. Reference: ${reference}` }
+        : { tone: "error", text: `Supabase rejected the submission: ${result.error}` }
+    );
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
+      <form onSubmit={handleSubmit} className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
         <SectionTitle icon={UserPlus} title="New applicant registration" caption="Use legal names exactly as they appear on official documents." />
+        {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <Field label="First name" placeholder="Grace" />
-          <Field label="Last name" placeholder="Mbuyi" />
-          <Field label="Date of birth" type="date" />
-          <Field label="Country of birth" placeholder="DR Congo" />
-          <Field label="Email address" type="email" placeholder="candidate@example.com" />
-          <Field label="Phone number" placeholder="+243..." />
-          <Field label="Education level" placeholder="High school diploma" />
-          <Field label="Passport or ID number" placeholder="ID reference" />
-          <Field label="Guardian full name" placeholder="Parent or guardian" />
-          <Field label="Guardian phone" placeholder="+243..." />
+          <Field name="first_name" label="First name" placeholder="Grace" required />
+          <Field name="last_name" label="Last name" placeholder="Mbuyi" required />
+          <Field name="date_of_birth" label="Date of birth" type="date" required />
+          <Field name="country_of_birth" label="Country of birth" placeholder="DR Congo" required />
+          <Field name="email" label="Email address" type="email" placeholder="candidate@example.com" required />
+          <Field name="phone" label="Phone number" placeholder="+243..." required />
+          <Field name="education_level" label="Education level" placeholder="High school diploma" required />
+          <Field name="identity_number" label="Passport or ID number" placeholder="ID reference" required />
+          <Field name="guardian_name" label="Guardian full name" placeholder="Parent or guardian" />
+          <Field name="guardian_phone" label="Guardian phone" placeholder="+243..." />
           <label className="min-w-0 sm:col-span-2">
             <span className="mb-2 block text-sm font-medium">Residential address</span>
-            <textarea className="min-h-[96px] w-full rounded-md border border-white/10 bg-[#061426] px-3 py-2 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="City, commune, avenue, number" />
+            <textarea name="residential_address" required className="min-h-[96px] w-full rounded-md border border-white/10 bg-[#061426] px-3 py-2 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="City, commune, avenue, number" />
           </label>
         </div>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-kcs-muted">Your application stays pending until payment and document verification are completed.</p>
-          <button className="flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-gold px-5 text-sm font-bold text-[#08111f]">
-            Apply now
+          <p className="text-sm leading-6 text-kcs-muted">Generated payment reference: {reference}</p>
+          <button disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-gold px-5 text-sm font-bold text-[#08111f] disabled:cursor-not-allowed disabled:opacity-60">
+            {isSubmitting ? "Submitting..." : "Submit application"}
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-      </section>
+      </form>
 
       <aside className="grid min-w-0 gap-4 content-start">
         <InfoPanel title="Eligibility" icon={BadgeCheck}>
@@ -152,28 +162,46 @@ function RegistrationPanel() {
             ))}
           </div>
         </InfoPanel>
-        <PaymentPanel />
+        <PaymentPanel reference={reference} />
       </aside>
     </div>
   );
 }
 
 function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: () => void }) {
+  const [notice, setNotice] = useState<Notice>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setNotice({ tone: "info", text: "Checking Supabase Auth..." });
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const result = await signInWithPassword(email, password);
+
+    setIsSubmitting(false);
+    setNotice(result.ok ? { tone: "success", text: "Login accepted by Supabase Auth." } : { tone: "error", text: `Login failed: ${result.error}` });
+  }
+
   return (
     <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.75fr)]">
-      <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-        <SectionTitle icon={LockKeyhole} title="Secure login" caption="Preview the dashboards using the demo identities shown above." />
+      <form onSubmit={handleSubmit} className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
+        <SectionTitle icon={LockKeyhole} title="Secure login" caption="Use the real account created in Supabase Auth." />
+        {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4">
-          <Field label="Email address" placeholder="student.demo@kcs.app" type="email" />
-          <Field label="Password" placeholder="Student@2026" type="password" />
-          <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426]">
+          <Field name="email" label="Email address" placeholder="candidate@example.com" type="email" required />
+          <Field name="password" label="Password" placeholder="Password" type="password" required />
+          <button disabled={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426] disabled:cursor-not-allowed disabled:opacity-60">
             <LockKeyhole className="h-4 w-4" />
-            Login securely
+            {isSubmitting ? "Signing in..." : "Login securely"}
           </button>
         </div>
-      </section>
+      </form>
       <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-        <h3 className="font-semibold">Open a demo dashboard</h3>
+        <h3 className="font-semibold">Protected workspaces</h3>
         <div className="mt-4 grid gap-3">
           <button onClick={onStudent} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
             Student dashboard <ChevronRight className="h-4 w-4" />
@@ -190,70 +218,51 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
 function StudentDashboard() {
   return (
     <div className="grid gap-6">
-      <DashboardHeader title="Student dashboard" subtitle="Grace Mbuyi · Application KCS-2026-104782" tone="Payment pending finance review" />
+      <DashboardHeader title="Student dashboard" subtitle="Applicant workspace" tone="Awaiting verified account data" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={ClipboardCheck} label="Application" value="Submitted" />
-        <Stat icon={CreditCard} label="Payment" value="Pending" />
-        <Stat icon={FileCheck2} label="Documents" value="3 / 4" />
-        <Stat icon={BadgeCheck} label="Eligibility" value="Provisional" />
+        <Stat icon={ClipboardCheck} label="Application" value="Pending sync" />
+        <Stat icon={CreditCard} label="Payment" value="Unverified" />
+        <Stat icon={FileCheck2} label="Documents" value="Required" />
+        <Stat icon={BadgeCheck} label="Eligibility" value="Under review" />
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
           <h3 className="font-semibold">Application timeline</h3>
           <div className="mt-4 grid gap-3">
-            {["Account created", "Registration form submitted", "Payment proof uploaded", "Finance review in progress"].map((item) => (
+            {["Account created in Supabase Auth", "Registration form submitted", "Payment proof uploaded", "Finance review completed"].map((item) => (
               <ChecklistItem key={item}>{item}</ChecklistItem>
             ))}
           </div>
         </section>
-        <PaymentPanel />
+        <PaymentPanel reference={`${paymentReferencePrefix}-#####`} />
       </div>
     </div>
   );
 }
 
-function AdminDemoDashboard() {
+function AdminDashboard() {
   return (
     <div className="grid gap-6">
-      <DashboardHeader title="Administration dashboard" subtitle="KCS review console · Demo administrator" tone="admin.demo@kcs.app" />
+      <DashboardHeader title="Administration dashboard" subtitle="KCS review console" tone="Supabase-backed workflow" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={Users} label="Applications" value="24,589" />
-        <Stat icon={Landmark} label="Verified payments" value="18,440" />
-        <Stat icon={AlertTriangle} label="Needs review" value="642" />
-        <Stat icon={GraduationCap} label="Eligible pool" value="8,420" />
+        <Stat icon={Users} label="Applications" value="Live data required" />
+        <Stat icon={Landmark} label="Verified payments" value="Finance queue" />
+        <Stat icon={ShieldCheck} label="Security" value="RLS required" />
+        <Stat icon={GraduationCap} label="Eligible pool" value="Review only" />
       </div>
       <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
         <div className="border-b border-white/10 p-4 sm:p-5">
-          <SectionTitle icon={BarChart3} title="Recent applicant queue" caption="Finance and document controls use server-side verification in production." />
+          <SectionTitle icon={Users} title="Applicant queue" caption="Connect this panel to a protected server-side Supabase query before exposing private records." />
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-sm">
-            <thead className="bg-[#061426] text-left text-kcs-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Applicant</th>
-                <th className="px-4 py-3 font-medium">Reference</th>
-                <th className="px-4 py-3 font-medium">Payment</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {["Grace Mbuyi", "Daniel Kanku", "Sarah Ilunga"].map((name, index) => (
-                <tr key={name} className="border-t border-white/10">
-                  <td className="px-4 py-3 font-medium">{name}</td>
-                  <td className="px-4 py-3 font-mono text-kcs-muted">KCS-2026-10478{index + 2}</td>
-                  <td className="px-4 py-3"><StatusBadge label={index === 0 ? "Pending finance" : "Needs correction"} /></td>
-                  <td className="px-4 py-3"><button className="rounded-md border border-white/10 px-3 py-1.5 font-semibold hover:bg-white/[0.06]">Review</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="p-4 text-sm leading-6 text-kcs-muted sm:p-5">
+          Administrative data should be loaded through server-side policies, role checks, and private RLS rules. The public publishable key must never receive broad access to private applicant records.
         </div>
       </section>
     </div>
   );
 }
 
-function PaymentPanel() {
+function PaymentPanel({ reference }: { reference: string }) {
   return (
     <InfoPanel title="Payment verification" icon={CreditCard}>
       <div className="grid gap-3">
@@ -270,11 +279,11 @@ function PaymentPanel() {
       <div className="mt-4 rounded-md border border-kcs-gold/30 bg-kcs-gold/10 p-3">
         <div className="flex min-w-0 items-center gap-2">
           <ReceiptText className="h-5 w-5 shrink-0 text-kcs-goldLight" />
-          <p className="min-w-0 break-words font-semibold">Manual reference: {paymentReference}</p>
+          <p className="min-w-0 break-words font-semibold">Manual reference: {reference}</p>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Transaction ID" placeholder="Operator reference" />
-          <button className="flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06]">
+          <Field name="transaction_id" label="Transaction ID" placeholder="Operator reference" />
+          <button className="flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06]" type="button">
             <Upload className="h-4 w-4" />
             Upload proof
           </button>
@@ -340,12 +349,14 @@ function ChecklistItem({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Field({ label, placeholder, type = "text" }: { label: string; placeholder?: string; type?: string }) {
+function Field({ label, name, placeholder, type = "text", required = false }: { label: string; name: string; placeholder?: string; type?: string; required?: boolean }) {
   return (
     <label className="min-w-0">
       <span className="mb-2 block text-sm font-medium">{label}</span>
       <input
+        name={name}
         type={type}
+        required={required}
         placeholder={placeholder}
         className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
       />
@@ -384,6 +395,15 @@ function StatusBadge({ label }: { label: string }) {
   );
 }
 
+function StatusRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] p-3">
+      <p className="text-sm font-medium">{label}</p>
+      <StatusBadge label={value} />
+    </div>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-4">
@@ -391,4 +411,14 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="mt-2 break-words text-lg font-semibold">{value}</p>
     </div>
   );
+}
+
+function NoticeBox({ notice }: { notice: NonNullable<Notice> }) {
+  const toneClass = {
+    success: "border-kcs-success/40 bg-kcs-success/10 text-kcs-success",
+    error: "border-kcs-danger/40 bg-kcs-danger/10 text-[#ffb2ad]",
+    info: "border-kcs-cyan/40 bg-kcs-cyan/10 text-kcs-cyan"
+  }[notice.tone];
+
+  return <div className={`mt-5 rounded-md border px-3 py-2 text-sm ${toneClass}`}>{notice.text}</div>;
 }
