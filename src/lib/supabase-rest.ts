@@ -12,13 +12,14 @@ export type SupabaseResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-export async function insertApplication(payload: SupabasePayload): Promise<SupabaseResult<unknown>> {
-  return supabaseFetch(`${supabaseRestUrl}/applications`, {
+export async function insertApplication(payload: SupabasePayload, accessToken?: string): Promise<SupabaseResult<unknown>> {
+  return supabaseFetch(`${supabaseRestUrl}/rpc/submit_application`, {
     method: "POST",
     headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       Prefer: "return=representation"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ application_data: payload })
   });
 }
 
@@ -86,7 +87,7 @@ export async function deleteApplication(id: string, accessToken: string): Promis
   });
 }
 
-export async function uploadPaymentProof(reference: string, file: File): Promise<SupabaseResult<{ path: string }>> {
+export async function uploadPaymentProof(reference: string, file: File, accessToken?: string): Promise<SupabaseResult<{ path: string }>> {
   if (!isSupabaseConfigured) {
     return { ok: false, error: "Supabase n'est pas configuré." };
   }
@@ -100,17 +101,17 @@ export async function uploadPaymentProof(reference: string, file: File): Promise
       method: "POST",
       headers: {
         apikey: supabasePublishableKey,
-        Authorization: `Bearer ${supabasePublishableKey}`,
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         "Content-Type": file.type || "application/octet-stream"
       },
       body: file
     });
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    const data = parseSupabaseResponse(text);
 
     if (!response.ok) {
-      return { ok: false, error: translateSupabaseError(data?.message ?? data?.error ?? response.statusText) };
+      return { ok: false, error: translateSupabaseError(getSupabaseErrorDetail(data, response.status, response.statusText)) };
     }
 
     return { ok: true, data: { path } };
@@ -129,23 +130,51 @@ async function supabaseFetch<T>(url: string, init: RequestInit): Promise<Supabas
       ...init,
       headers: {
         apikey: supabasePublishableKey,
-        Authorization: `Bearer ${supabasePublishableKey}`,
         "Content-Type": "application/json",
         ...(init.headers ?? {})
       }
     });
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    const data = parseSupabaseResponse(text);
 
     if (!response.ok) {
-      return { ok: false, error: translateSupabaseError(data?.message ?? data?.error_description ?? data?.error ?? data?.hint ?? response.statusText) };
+      return { ok: false, error: translateSupabaseError(getSupabaseErrorDetail(data, response.status, response.statusText)) };
     }
 
-    return { ok: true, data };
+    return { ok: true, data: data as T };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? translateSupabaseError(error.message) : "La requête Supabase a échoué." };
   }
+}
+
+function parseSupabaseResponse(text: string): unknown {
+  if (!text.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
+}
+
+function getSupabaseErrorDetail(data: unknown, status: number, statusText: string) {
+  if (data && typeof data === "object") {
+    const record = data as Record<string, unknown>;
+    const detail = record.message ?? record.error_description ?? record.error ?? record.hint ?? record.msg;
+
+    if (typeof detail === "string" && detail.trim()) {
+      return `${detail} (HTTP ${status})`;
+    }
+  }
+
+  if (typeof data === "string" && data.trim()) {
+    return `${data.trim()} (HTTP ${status})`;
+  }
+
+  return `${statusText || "Réponse vide de Supabase"} (HTTP ${status})`;
 }
 
 function translateSupabaseError(message: string) {
@@ -180,7 +209,7 @@ function translateSupabaseError(message: string) {
   }
 
   if (lowerMessage.includes("row-level security") || lowerMessage.includes("violates row-level security")) {
-    return "Supabase bloque cette action par sécurité. Exécutez le fichier supabase/setup.sql mis à jour.";
+    return "Supabase a refusé cette opération. Vérifiez la session du candidat et les autorisations configurées dans le projet.";
   }
 
   return message;

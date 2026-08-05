@@ -305,18 +305,38 @@ function RegistrationPanel() {
 
     const signupError = signupResult.ok ? "" : signupResult.error.toLowerCase();
 
-    if (!signupResult.ok && !signupError.includes("already") && !signupError.includes("existe déjà")) {
-      setIsSubmitting(false);
-      setNotice(null);
-      setDialog({ tone: "error", title: "Compte non créé", message: `Le compte candidat n'a pas pu être créé. ${signupResult.error}` });
-      return;
+    let authSession = signupResult.ok
+      ? signupResult.data as { access_token?: string; session?: { access_token?: string } }
+      : null;
+
+    if (!signupResult.ok) {
+      const accountAlreadyExists = signupError.includes("already") || signupError.includes("existe déjà");
+
+      if (!accountAlreadyExists) {
+        setIsSubmitting(false);
+        setNotice(null);
+        setDialog({ tone: "error", title: "Compte non créé", message: `Le compte candidat n'a pas pu être créé. ${signupResult.error}` });
+        return;
+      }
+
+      const loginResult = await signInWithPassword(email, password);
+
+      if (!loginResult.ok) {
+        setIsSubmitting(false);
+        setNotice(null);
+        setDialog({ tone: "error", title: "Compte existant", message: "Un compte utilise déjà cette adresse e-mail. Connectez-vous avec son mot de passe avant de déposer un nouveau dossier." });
+        return;
+      }
+
+      authSession = loginResult.data as { access_token?: string; session?: { access_token?: string } };
     }
 
+    const candidateAccessToken = authSession?.access_token || authSession?.session?.access_token;
     let paymentProofPath = "";
 
     if (proofFile) {
       setNotice({ tone: "info", text: "Envoi de la preuve de paiement..." });
-      const uploadResult = await uploadPaymentProof(reference, proofFile);
+      const uploadResult = await uploadPaymentProof(reference, proofFile, candidateAccessToken);
 
       if (!uploadResult.ok) {
         setIsSubmitting(false);
@@ -333,14 +353,14 @@ function RegistrationPanel() {
       ...payload,
       date_of_birth: dateOfBirth,
       payment_reference: reference,
-      status: "submitted"
+      status: "payment_under_review"
     };
-    const result = await insertApplication(paymentProofPath ? { ...applicationPayload, payment_proof_path: paymentProofPath } : applicationPayload);
+    const result = await insertApplication(paymentProofPath ? { ...applicationPayload, payment_proof_path: paymentProofPath } : applicationPayload, candidateAccessToken);
 
     setIsSubmitting(false);
     if (result.ok) {
       setNotice(null);
-      setDialog({ tone: "success", title: "Candidature déposée", message: `Votre compte candidat et votre dossier ont été créés avec succès. Référence de paiement : ${reference}` });
+      setDialog({ tone: "success", title: "Candidature en traitement", message: `Votre compte candidat et votre dossier ont été créés. Votre paiement et votre candidature sont maintenant en cours de vérification par notre équipe. Vous recevrez une réponse prochainement. Référence : ${reference}` });
       event.currentTarget.reset();
       setReference(`${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`);
       return;
@@ -512,7 +532,7 @@ function StudentDashboard({ session }: { session: StudentSession }) {
   }, [session]);
 
   const latestApplication = applications[0];
-  const resultMessage = latestApplication?.result_message || latestApplication?.admin_message || "Le résultat sera affiché ici dès que l'administration aura terminé la revue.";
+  const resultMessage = latestApplication?.result_message || latestApplication?.admin_message || "Votre candidature est en cours de traitement par notre équipe. Vous recevrez une réponse prochainement.";
   const progress = getStudentProgress(latestApplication?.status);
 
   return (
@@ -1444,7 +1464,7 @@ function ApplicationDetailDialog({ application, isMutating, onApprove, onReject,
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 py-6">
-      <section className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
+      <section className="max-h-[94vh] w-full max-w-7xl overflow-y-auto rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/10 bg-[#081b30] p-4 sm:p-5">
           <div>
             <h2 className="text-xl font-semibold text-white">{fullName}</h2>

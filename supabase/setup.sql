@@ -138,6 +138,64 @@ execute function public.enqueue_result_email();
 
 alter table public.applications enable row level security;
 
+-- Point d'entrée unique du formulaire public. La fonction valide et normalise
+-- le dossier côté serveur avant de l'insérer, sans dépendre d'un INSERT REST
+-- direct particulièrement fragile avec les politiques RLS.
+create or replace function public.submit_application(application_data jsonb)
+returns public.applications
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  submitted_application public.applications;
+  applicant_email text := lower(trim(application_data ->> 'email'));
+  session_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+begin
+  if applicant_email = ''
+    or length(trim(coalesce(application_data ->> 'first_name', ''))) < 1
+    or length(trim(coalesce(application_data ->> 'last_name', ''))) < 1
+    or length(trim(coalesce(application_data ->> 'phone', ''))) < 5
+    or length(trim(coalesce(application_data ->> 'identity_number', ''))) < 2
+    or length(trim(coalesce(application_data ->> 'residential_address', ''))) < 3
+    or length(trim(coalesce(application_data ->> 'motivation', ''))) < 10
+    or length(trim(coalesce(application_data ->> 'payment_operator', ''))) < 2
+    or length(trim(coalesce(application_data ->> 'transaction_id', ''))) < 3
+    or coalesce(application_data ->> 'payment_reference', '') not like 'KCS-2026-%'
+  then
+    raise exception 'Le dossier est incomplet ou contient des valeurs invalides.' using errcode = '22023';
+  end if;
+
+  if auth.uid() is not null and session_email <> applicant_email then
+    raise exception 'L''adresse du compte ne correspond pas à celle du dossier.' using errcode = '42501';
+  end if;
+
+  insert into public.applications (
+    user_id, first_name, last_name, date_of_birth, country_of_birth, email,
+    phone, education_level, identity_number, guardian_name, guardian_phone,
+    province, residential_address, motivation, payment_reference,
+    payment_operator, transaction_id, payment_proof_path, admin_message, status
+  ) values (
+    auth.uid(), trim(application_data ->> 'first_name'), trim(application_data ->> 'last_name'),
+    (application_data ->> 'date_of_birth')::date, trim(application_data ->> 'country_of_birth'),
+    applicant_email, trim(application_data ->> 'phone'), trim(application_data ->> 'education_level'),
+    trim(application_data ->> 'identity_number'), nullif(trim(application_data ->> 'guardian_name'), ''),
+    nullif(trim(application_data ->> 'guardian_phone'), ''), nullif(trim(application_data ->> 'province'), ''),
+    trim(application_data ->> 'residential_address'), nullif(trim(application_data ->> 'motivation'), ''),
+    trim(application_data ->> 'payment_reference'), nullif(trim(application_data ->> 'payment_operator'), ''),
+    nullif(trim(application_data ->> 'transaction_id'), ''), nullif(trim(application_data ->> 'payment_proof_path'), ''),
+    'Votre candidature est en cours de traitement par notre équipe. Vous recevrez une réponse prochainement.',
+    'payment_under_review'
+  )
+  returning * into submitted_application;
+
+  return submitted_application;
+end;
+$$;
+
+revoke all on function public.submit_application(jsonb) from public;
+grant execute on function public.submit_application(jsonb) to anon, authenticated;
+
 drop policy if exists "Public applicants can submit applications" on public.applications;
 drop policy if exists "Authenticated users can read own application" on public.applications;
 drop policy if exists "Authenticated admins can manage applications" on public.applications;
