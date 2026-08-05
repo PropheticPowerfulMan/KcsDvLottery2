@@ -5,7 +5,7 @@ const nextConfig = {
   reactStrictMode: true,
   output: "export",
   basePath: isGitHubPages ? "/KcsDvLottery2" : "",
-  assetPrefix: isGitHubPages ? "/KcsDvLottery2/" : "",
+  assetPrefix: isGitHubPages ? "/KcsDvLottery2/" : "./",
   env: {
     NEXT_PUBLIC_BASE_PATH: isGitHubPages ? "/KcsDvLottery2" : ""
   },

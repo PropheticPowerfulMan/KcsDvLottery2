@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background-main: #061426;
   --background-secondary: #081b30;
@@ -44,10 +48,6 @@ input,
 select {
   font: inherit;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 .premium-panel {
   background:
