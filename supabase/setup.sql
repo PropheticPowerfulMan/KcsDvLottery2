@@ -142,6 +142,9 @@ drop policy if exists "Public applicants can submit applications" on public.appl
 drop policy if exists "Authenticated users can read own application" on public.applications;
 drop policy if exists "Authenticated admins can manage applications" on public.applications;
 drop policy if exists "Applicants can update own payment details" on public.applications;
+drop policy if exists "Authenticated admins can read all applications" on public.applications;
+drop policy if exists "Authenticated admins can decide applications" on public.applications;
+drop policy if exists "Authenticated admins can delete applications" on public.applications;
 
 create policy "Public applicants can submit applications"
 on public.applications
@@ -187,6 +190,25 @@ with check (
   or lower(email) = lower(auth.jwt() ->> 'email')
 );
 
+create policy "Authenticated admins can read all applications"
+on public.applications
+for select
+to authenticated
+using (auth.jwt() -> 'user_metadata' ->> 'role' = 'admin');
+
+create policy "Authenticated admins can decide applications"
+on public.applications
+for update
+to authenticated
+using (auth.jwt() -> 'user_metadata' ->> 'role' = 'admin')
+with check (auth.jwt() -> 'user_metadata' ->> 'role' = 'admin');
+
+create policy "Authenticated admins can delete applications"
+on public.applications
+for delete
+to authenticated
+using (auth.jwt() -> 'user_metadata' ->> 'role' = 'admin');
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'payment-proofs',
@@ -221,13 +243,12 @@ for select
 to authenticated
 using (bucket_id = 'payment-proofs');
 
--- Admin access is intentionally not granted to the public publishable key.
--- For an admin dashboard, query through a server route with SUPABASE_SERVICE_ROLE_KEY
--- or add a separate profiles/roles table and admin-only RLS policy.
+-- Admin actions use the authenticated JWT role metadata: {"role": "admin"}.
 
 grant usage on schema public to anon, authenticated;
 grant insert on public.applications to anon, authenticated;
-grant update (payment_operator, transaction_id, payment_proof_path) on public.applications to authenticated;
+grant update (payment_operator, transaction_id, payment_proof_path, status, result_message, admin_message) on public.applications to authenticated;
+grant delete on public.applications to authenticated;
 grant select on public.applications to authenticated;
 grant select, update on public.result_email_queue to service_role;
 
@@ -258,4 +279,6 @@ select
   created_at
 from public.applications;
 
-grant select on public.admin_application_metrics to anon, authenticated;
+alter view public.admin_application_metrics set (security_invoker = true);
+
+grant select on public.admin_application_metrics to authenticated;

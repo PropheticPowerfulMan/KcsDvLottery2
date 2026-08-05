@@ -52,9 +52,37 @@ export async function getOwnApplications(accessToken: string): Promise<SupabaseR
   });
 }
 
-export async function getAdminApplicationMetrics(): Promise<SupabaseResult<unknown[]>> {
+export async function getAdminApplicationMetrics(accessToken?: string): Promise<SupabaseResult<unknown[]>> {
   return supabaseFetch(`${supabaseRestUrl}/admin_application_metrics?select=*&order=created_at.desc`, {
-    method: "GET"
+    method: "GET",
+    headers: accessToken ? {
+      Authorization: `Bearer ${accessToken}`
+    } : undefined
+  });
+}
+
+export async function updateApplicationDecision(id: string, accessToken: string, status: "approved" | "rejected", resultMessage: string): Promise<SupabaseResult<unknown>> {
+  return supabaseFetch(`${supabaseRestUrl}/applications?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Prefer: "return=representation"
+    },
+    body: JSON.stringify({
+      status,
+      result_message: resultMessage,
+      admin_message: resultMessage
+    })
+  });
+}
+
+export async function deleteApplication(id: string, accessToken: string): Promise<SupabaseResult<unknown>> {
+  return supabaseFetch(`${supabaseRestUrl}/applications?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Prefer: "return=representation"
+    }
   });
 }
 

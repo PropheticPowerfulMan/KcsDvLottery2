@@ -37,7 +37,7 @@ import {
 } from "recharts";
 import { FormEvent, useEffect, useState } from "react";
 import { KcsBrand } from "@/components/branding/kcs-brand";
-import { getAdminApplicationMetrics, getOwnApplications, insertApplication, isSupabaseConfigured, signInWithPassword, signUpWithPassword, uploadPaymentProof } from "@/lib/supabase-rest";
+import { deleteApplication, getAdminApplicationMetrics, getOwnApplications, insertApplication, isSupabaseConfigured, signInWithPassword, signUpWithPassword, updateApplicationDecision, uploadPaymentProof } from "@/lib/supabase-rest";
 
 const paymentReferencePrefix = "KCS-2026";
 
@@ -109,6 +109,7 @@ type DialogState = { tone: "success" | "error" | "info"; title: string; message:
 type StudentSession = { accessToken: string; email: string } | null;
 type AdminSession = { accessToken: string; email: string } | null;
 type LoginTarget = "student" | "admin";
+type AdminTab = "resume" | "recherche" | "graphiques" | "candidatures" | "controle";
 type AdminMetric = {
   id: string;
   first_name?: string;
@@ -250,7 +251,7 @@ export default function Home() {
           />
         )}
         {view === "student" && <StudentDashboard session={studentSession} />}
-        {view === "admin" && (adminSession ? <AdminDashboard /> : <LoginRequiredPanel target="admin" onLogin={() => openProtectedView("admin")} />)}
+        {view === "admin" && (adminSession ? <AdminDashboard session={adminSession} /> : <LoginRequiredPanel target="admin" onLogin={() => openProtectedView("admin")} />)}
       </section>
     </main>
   );
@@ -573,11 +574,13 @@ function LoginRequiredPanel({ target, onLogin }: { target: LoginTarget; onLogin:
   );
 }
 
-function AdminDashboard() {
+function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
   const [notice, setNotice] = useState<Notice>({ tone: "info", text: "Chargement des statistiques Supabase..." });
   const [metrics, setMetrics] = useState<AdminMetric[]>(demoAdminMetrics);
   const [source, setSource] = useState("Données de démonstration");
   const [selectedApplication, setSelectedApplication] = useState<AdminMetric | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTab>("resume");
+  const [isMutating, setIsMutating] = useState(false);
   const [filters, setFilters] = useState({
     query: "",
     province: "",
@@ -589,7 +592,7 @@ function AdminDashboard() {
   });
 
   useEffect(() => {
-    getAdminApplicationMetrics().then((result) => {
+    getAdminApplicationMetrics(session.accessToken).then((result) => {
       if (!result.ok) {
         setNotice({ tone: "info", text: "La vue Supabase des statistiques n'est pas encore disponible. Le dashboard affiche les 10 candidatures de test." });
         return;
@@ -606,7 +609,7 @@ function AdminDashboard() {
       setSource("Supabase en direct");
       setNotice(null);
     });
-  }, []);
+  }, [session.accessToken]);
 
   const filteredMetrics = filterAdminMetrics(metrics, filters);
   const stats = buildAdminStats(filteredMetrics);
@@ -614,23 +617,97 @@ function AdminDashboard() {
   const paymentOptions = uniqueValues(metrics.map((row) => row.payment_operator));
   const statusOptions = uniqueValues(metrics.map((row) => row.status));
 
+  async function refreshMetrics() {
+    const result = await getAdminApplicationMetrics(session.accessToken);
+
+    if (!result.ok) {
+      setNotice({ tone: "error", text: `Actualisation impossible : ${result.error}` });
+      return;
+    }
+
+    const rows = Array.isArray(result.data) ? (result.data as AdminMetric[]) : [];
+    setMetrics(rows.length ? rows : demoAdminMetrics);
+    setSource(rows.length ? "Supabase en direct" : "Données de démonstration");
+  }
+
+  async function handleDecision(application: AdminMetric, status: "approved" | "rejected") {
+    const label = status === "approved" ? "approuvée" : "refusée";
+    setIsMutating(true);
+    const result = await updateApplicationDecision(
+      application.id,
+      session.accessToken,
+      status,
+      status === "approved" ? "Votre candidature a été approuvée par l'administration." : "Votre candidature a été refusée après vérification administrative."
+    );
+    setIsMutating(false);
+
+    if (!result.ok) {
+      setNotice({ tone: "error", text: `Action impossible : ${result.error}` });
+      return;
+    }
+
+    setNotice({ tone: "success", text: `Candidature ${label}.` });
+    setSelectedApplication(null);
+    await refreshMetrics();
+  }
+
+  async function handleDelete(application: AdminMetric) {
+    const confirmed = window.confirm(`Supprimer définitivement la candidature de ${application.first_name ?? "ce candidat"} ${application.last_name ?? ""} ?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsMutating(true);
+    const result = await deleteApplication(application.id, session.accessToken);
+    setIsMutating(false);
+
+    if (!result.ok) {
+      setNotice({ tone: "error", text: `Suppression impossible : ${result.error}` });
+      return;
+    }
+
+    setNotice({ tone: "success", text: "Candidature supprimée de la base." });
+    setSelectedApplication(null);
+    await refreshMetrics();
+  }
+
   return (
     <div className="grid gap-6">
       <DashboardHeader title="Espace administration" subtitle="Pilotage statistique des candidatures KCS" tone={source} />
       {notice ? <NoticeBox notice={notice} /> : null}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={Users} label="Candidatures" value={String(stats.total)} />
-        <Stat icon={Landmark} label="Paiements tracés" value={`${stats.paymentRate}%`} />
-        <Stat icon={MapPinned} label="Provinces actives" value={String(stats.provinceCount)} />
-        <Stat icon={TrendingUp} label="Taux d'acceptation" value={`${stats.approvalRate}%`} />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={FileCheck2} label="Complétude moyenne" value={`${stats.completionRate}%`} />
-        <Stat icon={ShieldCheck} label="Indice de concentration" value={stats.concentrationIndex.toFixed(2)} />
-        <Stat icon={ClipboardCheck} label="Dossiers en attente" value={`${stats.pendingRate}%`} />
-        <Stat icon={CreditCard} label="Preuves jointes" value={`${stats.proofRate}%`} />
-      </div>
-      <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+      <AdminTabs activeTab={activeTab} onChange={setActiveTab} />
+      {activeTab === "resume" ? (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Stat icon={Users} label="Candidatures" value={String(stats.total)} />
+            <Stat icon={Landmark} label="Paiements tracés" value={`${stats.paymentRate}%`} />
+            <Stat icon={MapPinned} label="Provinces actives" value={String(stats.provinceCount)} />
+            <Stat icon={TrendingUp} label="Taux d'acceptation" value={`${stats.approvalRate}%`} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Stat icon={FileCheck2} label="Complétude moyenne" value={`${stats.completionRate}%`} />
+            <Stat icon={ShieldCheck} label="Indice de concentration" value={stats.concentrationIndex.toFixed(2)} />
+            <Stat icon={ClipboardCheck} label="Dossiers en attente" value={`${stats.pendingRate}%`} />
+            <Stat icon={CreditCard} label="Preuves jointes" value={`${stats.proofRate}%`} />
+          </div>
+          <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+            <SectionTitle icon={TrendingUp} title="Lecture scientifique" caption="Synthèse statistique du comportement du système." />
+            <div className="mt-5 grid gap-3 text-sm leading-6 text-kcs-muted">
+              <p>La province dominante représente <strong className="text-white">{stats.topProvinceShare}%</strong> du volume total.</p>
+              <p>L'indice de concentration est <strong className="text-white">{stats.concentrationIndex.toFixed(2)}</strong>. Plus il est proche de 1, plus les candidatures sont réparties sur plusieurs provinces.</p>
+              <p>Le ratio dossiers complets mesure la présence d'une transaction, d'une province, d'une motivation et d'un statut exploitable.</p>
+            </div>
+            <div className="mt-5 grid gap-3">
+              <ProgressRow label="Dossiers complets" value={stats.completionRate} />
+              <ProgressRow label="Paiements traçables" value={stats.paymentRate} />
+              <ProgressRow label="Décisions communiquées" value={stats.resultRate} />
+            </div>
+          </section>
+        </>
+      ) : null}
+      {activeTab === "recherche" ? (
+        <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
         <SectionTitle icon={ClipboardCheck} title="Recherche minutieuse" caption="Filtrer les candidatures et recalculer automatiquement tous les indicateurs." />
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="min-w-0 xl:col-span-2">
@@ -656,6 +733,9 @@ function AdminDashboard() {
           </button>
         </div>
       </section>
+      ) : null}
+      {activeTab === "graphiques" ? (
+        <>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <ChartPanel title="Candidatures par province" subtitle="Répartition territoriale RDC">
           <ResponsiveContainer width="100%" height={310}>
@@ -718,21 +798,11 @@ function AdminDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </ChartPanel>
-        <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
-          <SectionTitle icon={TrendingUp} title="Lecture scientifique" caption="Synthèse statistique du comportement du système." />
-          <div className="mt-5 grid gap-3 text-sm leading-6 text-kcs-muted">
-            <p>La province dominante représente <strong className="text-white">{stats.topProvinceShare}%</strong> du volume total.</p>
-            <p>L'indice de concentration est <strong className="text-white">{stats.concentrationIndex.toFixed(2)}</strong>. Plus il est proche de 1, plus les candidatures sont réparties sur plusieurs provinces.</p>
-            <p>Le ratio dossiers complets mesure la présence d'une transaction, d'une province, d'une motivation et d'un statut exploitable.</p>
-          </div>
-          <div className="mt-5 grid gap-3">
-            <ProgressRow label="Dossiers complets" value={stats.completionRate} />
-            <ProgressRow label="Paiements traçables" value={stats.paymentRate} />
-            <ProgressRow label="Décisions communiquées" value={stats.resultRate} />
-          </div>
-        </section>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+        </>
+      ) : null}
+      {activeTab === "controle" ? (
+      <div className="grid gap-6">
         <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
           <SectionTitle icon={ShieldCheck} title="Indicateurs de contrôle" caption="Qualité des dossiers et travail restant." />
           <div className="mt-5 grid gap-3">
@@ -741,6 +811,9 @@ function AdminDashboard() {
             <ProgressRow label="Dossiers encore à traiter" value={stats.pendingRate} />
           </div>
         </section>
+      </div>
+      ) : null}
+      {activeTab === "candidatures" ? (
         <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
           <div className="border-b border-white/10 p-4 sm:p-5">
             <SectionTitle icon={Users} title="Candidatures récentes" caption="Vue de pilotage, sans exposer les mots de passe." />
@@ -773,8 +846,17 @@ function AdminDashboard() {
             </table>
           </div>
         </section>
-      </div>
-      {selectedApplication ? <ApplicationDetailDialog application={selectedApplication} onClose={() => setSelectedApplication(null)} /> : null}
+      ) : null}
+      {selectedApplication ? (
+        <ApplicationDetailDialog
+          application={selectedApplication}
+          isMutating={isMutating}
+          onApprove={() => handleDecision(selectedApplication, "approved")}
+          onReject={() => handleDecision(selectedApplication, "rejected")}
+          onDelete={() => handleDelete(selectedApplication)}
+          onClose={() => setSelectedApplication(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1031,7 +1113,32 @@ function ProgressRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function ApplicationDetailDialog({ application, onClose }: { application: AdminMetric; onClose: () => void }) {
+function AdminTabs({ activeTab, onChange }: { activeTab: AdminTab; onChange: (tab: AdminTab) => void }) {
+  const tabs: Array<{ id: AdminTab; label: string }> = [
+    { id: "resume", label: "Résumé" },
+    { id: "recherche", label: "Recherche" },
+    { id: "graphiques", label: "Graphiques" },
+    { id: "candidatures", label: "Candidatures" },
+    { id: "controle", label: "Contrôle" }
+  ];
+
+  return (
+    <div className="flex gap-2 overflow-x-auto rounded-lg border border-white/10 bg-[#081b30] p-2">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onChange(tab.id)}
+          className={`h-10 shrink-0 rounded-md px-4 text-sm font-semibold ${activeTab === tab.id ? "bg-kcs-gold text-[#08111f]" : "text-kcs-muted hover:bg-white/[0.06] hover:text-white"}`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ApplicationDetailDialog({ application, isMutating, onApprove, onReject, onDelete, onClose }: { application: AdminMetric; isMutating: boolean; onApprove: () => void; onReject: () => void; onDelete: () => void; onClose: () => void }) {
   const fullName = `${application.first_name ?? ""} ${application.last_name ?? ""}`.trim() || "Candidat";
 
   return (
@@ -1079,6 +1186,21 @@ function ApplicationDetailDialog({ application, onClose }: { application: AdminM
             <p className="rounded-md border border-white/10 bg-[#061426] p-3 text-sm leading-6 text-kcs-muted">{application.motivation || "Motivation non disponible dans la vue actuelle."}</p>
             <p className="mt-3 rounded-md border border-kcs-gold/25 bg-kcs-gold/10 p-3 text-sm leading-6 text-kcs-muted">{application.result_message || application.admin_message || "Aucun résultat administratif communiqué."}</p>
           </DetailSection>
+          <section className="rounded-lg border border-white/10 bg-[#061426] p-4">
+            <h3 className="font-semibold text-white">Décision administrative</h3>
+            <p className="mt-1 text-sm leading-6 text-kcs-muted">Ces actions mettent à jour la candidature dans Supabase avec la session administrateur connectée.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <button type="button" disabled={isMutating} onClick={onApprove} className="h-10 rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426] disabled:cursor-not-allowed disabled:opacity-60">
+                Approuver
+              </button>
+              <button type="button" disabled={isMutating} onClick={onReject} className="h-10 rounded-md bg-kcs-danger px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+                Refuser
+              </button>
+              <button type="button" disabled={isMutating} onClick={onDelete} className="h-10 rounded-md border border-kcs-danger/50 px-4 text-sm font-semibold text-[#ffb2ad] hover:bg-kcs-danger/10 disabled:cursor-not-allowed disabled:opacity-60">
+                Supprimer
+              </button>
+            </div>
+          </section>
         </div>
       </section>
     </div>
