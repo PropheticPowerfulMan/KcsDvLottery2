@@ -111,7 +111,7 @@ async function supabaseFetch<T>(url: string, init: RequestInit): Promise<Supabas
     const data = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
-      return { ok: false, error: translateSupabaseError(data?.message ?? data?.error_description ?? data?.hint ?? response.statusText) };
+      return { ok: false, error: translateSupabaseError(data?.message ?? data?.error_description ?? data?.error ?? data?.hint ?? response.statusText) };
     }
 
     return { ok: true, data };
@@ -121,6 +121,10 @@ async function supabaseFetch<T>(url: string, init: RequestInit): Promise<Supabas
 }
 
 function translateSupabaseError(message: string) {
+  if (!message || !message.trim()) {
+    return "Supabase n'a pas renvoyé de détail. Vérifiez que le compte, l'e-mail et la configuration Auth sont valides.";
+  }
+
   const lowerMessage = message.toLowerCase();
 
   if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("email_not_confirmed")) {

@@ -105,32 +105,68 @@ const chartColors = ["#f2c94c", "#31d0aa", "#38bdf8", "#fb7185", "#a78bfa", "#f9
 
 type View = "register" | "login" | "student" | "admin";
 type Notice = { tone: "success" | "error" | "info"; text: string } | null;
+type DialogState = { tone: "success" | "error" | "info"; title: string; message: string } | null;
 type StudentSession = { accessToken: string; email: string } | null;
 type AdminMetric = {
   id: string;
   first_name?: string;
   last_name?: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string;
+  country_of_birth?: string;
+  education_level?: string;
+  identity_number?: string;
+  guardian_name?: string;
+  guardian_phone?: string;
   province?: string;
+  residential_address?: string;
+  motivation?: string;
   status: string;
   payment_operator?: string;
   transaction_id?: string;
   payment_proof_path?: string;
+  payment_reference?: string;
   result_message?: string;
+  admin_message?: string;
   created_at: string;
+  updated_at?: string;
 };
 
 const demoAdminMetrics: AdminMetric[] = [
-  { id: "demo-01", first_name: "Grace", last_name: "Mbuyi", province: "Kinshasa", status: "approved", payment_operator: "M-Pesa", transaction_id: "MP250001", payment_proof_path: "demo/01.pdf", result_message: "Candidature approuvée.", created_at: "2026-08-01T08:15:00Z" },
-  { id: "demo-02", first_name: "Daniel", last_name: "Kabongo", province: "Haut-Katanga", status: "under_review", payment_operator: "Airtel Money", transaction_id: "AM250002", payment_proof_path: "demo/02.jpg", created_at: "2026-08-01T10:20:00Z" },
-  { id: "demo-03", first_name: "Sarah", last_name: "Ilunga", province: "Kongo-Central", status: "payment_under_review", payment_operator: "Orange Money", transaction_id: "OM250003", payment_proof_path: "demo/03.png", created_at: "2026-08-02T09:35:00Z" },
-  { id: "demo-04", first_name: "Moise", last_name: "Kanku", province: "Nord-Kivu", status: "submitted", payment_operator: "M-Pesa", transaction_id: "MP250004", created_at: "2026-08-02T12:10:00Z" },
-  { id: "demo-05", first_name: "Aline", last_name: "Bisimwa", province: "Sud-Kivu", status: "eligible", payment_operator: "Airtel Money", transaction_id: "AM250005", payment_proof_path: "demo/05.pdf", result_message: "Éligible pour l'étape suivante.", created_at: "2026-08-03T07:50:00Z" },
-  { id: "demo-06", first_name: "Patrick", last_name: "Tshibangu", province: "Kasaï-Central", status: "documents_required", payment_operator: "Orange Money", transaction_id: "OM250006", created_at: "2026-08-03T14:05:00Z" },
-  { id: "demo-07", first_name: "Merveille", last_name: "Lutete", province: "Kwilu", status: "rejected", payment_operator: "M-Pesa", transaction_id: "MP250007", payment_proof_path: "demo/07.jpg", result_message: "Dossier rejeté après vérification.", created_at: "2026-08-04T08:30:00Z" },
-  { id: "demo-08", first_name: "Jonathan", last_name: "Moke", province: "Tshopo", status: "approved", payment_operator: "Airtel Money", transaction_id: "AM250008", payment_proof_path: "demo/08.pdf", result_message: "Candidature approuvée.", created_at: "2026-08-04T11:45:00Z" },
-  { id: "demo-09", first_name: "Rebecca", last_name: "Nsimba", province: "Lualaba", status: "ineligible", payment_operator: "Orange Money", transaction_id: "OM250009", payment_proof_path: "demo/09.png", result_message: "Non éligible.", created_at: "2026-08-05T09:00:00Z" },
-  { id: "demo-10", first_name: "Emmanuel", last_name: "Wemba", province: "Ituri", status: "submitted", payment_operator: "M-Pesa", transaction_id: "MP250010", payment_proof_path: "demo/10.jpg", created_at: "2026-08-05T13:25:00Z" }
-];
+  ["Grace", "Mbuyi", "Kinshasa", "approved", "M-Pesa"],
+  ["Daniel", "Kabongo", "Haut-Katanga", "under_review", "Airtel Money"],
+  ["Sarah", "Ilunga", "Kongo-Central", "payment_under_review", "Orange Money"],
+  ["Moise", "Kanku", "Nord-Kivu", "submitted", "M-Pesa"],
+  ["Aline", "Bisimwa", "Sud-Kivu", "eligible", "Airtel Money"],
+  ["Patrick", "Tshibangu", "Kasaï-Central", "documents_required", "Orange Money"],
+  ["Merveille", "Lutete", "Kwilu", "rejected", "M-Pesa"],
+  ["Jonathan", "Moke", "Tshopo", "approved", "Airtel Money"],
+  ["Rebecca", "Nsimba", "Lualaba", "ineligible", "Orange Money"],
+  ["Emmanuel", "Wemba", "Ituri", "submitted", "M-Pesa"]
+].map(([firstName, lastName, province, status, operator], index) => ({
+  id: `demo-${String(index + 1).padStart(2, "0")}`,
+  first_name: firstName,
+  last_name: lastName,
+  email: `test.${firstName.toLowerCase()}.${lastName.toLowerCase()}@kcs.app`,
+  phone: `+2438100000${String(index + 1).padStart(2, "0")}`,
+  date_of_birth: `200${index % 5}-0${(index % 8) + 1}-1${index % 9}`,
+  country_of_birth: "RD Congo",
+  education_level: index % 3 === 0 ? "Diplôme d'État" : "Licence",
+  identity_number: `KCS-ID-${String(index + 1).padStart(3, "0")}`,
+  guardian_name: "Responsable Test",
+  guardian_phone: `+2438200000${String(index + 1).padStart(2, "0")}`,
+  province,
+  residential_address: `${province}, centre-ville`,
+  motivation: "Candidature de démonstration utilisée pour tester les statistiques et la revue administrative.",
+  status,
+  payment_operator: operator,
+  transaction_id: `${operator.slice(0, 2).toUpperCase()}2500${String(index + 1).padStart(2, "0")}`,
+  payment_proof_path: index === 3 || index === 5 ? undefined : `demo/${String(index + 1).padStart(2, "0")}.pdf`,
+  payment_reference: `KCS-2026-91${String(index + 1).padStart(3, "0")}`,
+  result_message: ["approved", "eligible", "rejected", "ineligible"].includes(status) ? "Résultat de démonstration disponible." : undefined,
+  created_at: `2026-08-0${Math.min(index + 1, 5)}T${String(8 + index).padStart(2, "0")}:15:00Z`
+}));
 
 export default function Home() {
   const [view, setView] = useState<View>("register");
@@ -196,7 +232,7 @@ export default function Home() {
 
 function RegistrationPanel() {
   const [notice, setNotice] = useState<Notice>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DialogState>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reference, setReference] = useState(`${paymentReferencePrefix}-00000`);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -232,7 +268,8 @@ function RegistrationPanel() {
       || parsedDate.getDate() !== Number(birthDay)
     ) {
       setIsSubmitting(false);
-      setNotice({ tone: "error", text: "La date de naissance choisie n'est pas valide." });
+      setNotice(null);
+      setDialog({ tone: "error", title: "Date invalide", message: "La date de naissance choisie n'est pas valide." });
       return;
     }
 
@@ -242,7 +279,8 @@ function RegistrationPanel() {
 
     if (!signupResult.ok && !signupError.includes("already") && !signupError.includes("existe déjà")) {
       setIsSubmitting(false);
-      setNotice({ tone: "error", text: `Le compte candidat n'a pas pu être créé : ${signupResult.error}` });
+      setNotice(null);
+      setDialog({ tone: "error", title: "Compte non créé", message: `Le compte candidat n'a pas pu être créé. ${signupResult.error}` });
       return;
     }
 
@@ -254,7 +292,8 @@ function RegistrationPanel() {
 
       if (!uploadResult.ok) {
         setIsSubmitting(false);
-        setNotice({ tone: "error", text: `La preuve de paiement n'a pas pu être envoyée : ${uploadResult.error}` });
+        setNotice(null);
+        setDialog({ tone: "error", title: "Preuve non envoyée", message: `La preuve de paiement n'a pas pu être envoyée. ${uploadResult.error}` });
         return;
       }
 
@@ -262,24 +301,25 @@ function RegistrationPanel() {
     }
 
     setNotice({ tone: "info", text: "Envoi du dossier en cours..." });
-    const result = await insertApplication({
+    const applicationPayload = {
       ...payload,
       date_of_birth: dateOfBirth,
       payment_reference: reference,
-      payment_proof_path: paymentProofPath,
       status: "submitted"
-    });
+    };
+    const result = await insertApplication(paymentProofPath ? { ...applicationPayload, payment_proof_path: paymentProofPath } : applicationPayload);
 
     setIsSubmitting(false);
     if (result.ok) {
       setNotice(null);
-      setSuccessMessage(`Votre compte candidat et votre dossier ont été créés avec succès. Référence de paiement : ${reference}`);
+      setDialog({ tone: "success", title: "Candidature déposée", message: `Votre compte candidat et votre dossier ont été créés avec succès. Référence de paiement : ${reference}` });
       event.currentTarget.reset();
       setReference(`${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`);
       return;
     }
 
-    setNotice({ tone: "error", text: `Supabase a refusé l'envoi : ${result.error}` });
+    setNotice(null);
+    setDialog({ tone: "error", title: "Candidature refusée", message: `Supabase a refusé l'envoi. ${result.error}` });
   }
 
   return (
@@ -346,7 +386,7 @@ function RegistrationPanel() {
         </InfoPanel>
         <PaymentPanel reference={reference} />
       </aside>
-      {successMessage ? <SuccessDialog message={successMessage} onClose={() => setSuccessMessage(null)} /> : null}
+      {dialog ? <FeedbackDialog dialog={dialog} onClose={() => setDialog(null)} /> : null}
     </div>
   );
 }
@@ -483,6 +523,7 @@ function AdminDashboard() {
   const [notice, setNotice] = useState<Notice>({ tone: "info", text: "Chargement des statistiques Supabase..." });
   const [metrics, setMetrics] = useState<AdminMetric[]>(demoAdminMetrics);
   const [source, setSource] = useState("Données de démonstration");
+  const [selectedApplication, setSelectedApplication] = useState<AdminMetric | null>(null);
 
   useEffect(() => {
     getAdminApplicationMetrics().then((result) => {
@@ -515,6 +556,12 @@ function AdminDashboard() {
         <Stat icon={Landmark} label="Paiements tracés" value={`${stats.paymentRate}%`} />
         <Stat icon={MapPinned} label="Provinces actives" value={String(stats.provinceCount)} />
         <Stat icon={TrendingUp} label="Taux d'acceptation" value={`${stats.approvalRate}%`} />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Stat icon={FileCheck2} label="Complétude moyenne" value={`${stats.completionRate}%`} />
+        <Stat icon={ShieldCheck} label="Indice de concentration" value={stats.concentrationIndex.toFixed(2)} />
+        <Stat icon={ClipboardCheck} label="Dossiers en attente" value={`${stats.pendingRate}%`} />
+        <Stat icon={CreditCard} label="Preuves jointes" value={`${stats.proofRate}%`} />
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <ChartPanel title="Candidatures par province" subtitle="Répartition territoriale RDC">
@@ -566,6 +613,32 @@ function AdminDashboard() {
           </ResponsiveContainer>
         </ChartPanel>
       </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <ChartPanel title="Rendement par province" subtitle="Taux d'acceptation local par volume">
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={stats.provincePerformance}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#9aa8bd", fontSize: 11 }} interval={0} angle={-24} textAnchor="end" height={76} />
+              <YAxis tick={{ fill: "#9aa8bd", fontSize: 12 }} />
+              <Tooltip contentStyle={{ background: "#081b30", border: "1px solid rgba(255,255,255,.12)", color: "#fff" }} />
+              <Bar dataKey="taux" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartPanel>
+        <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+          <SectionTitle icon={TrendingUp} title="Lecture scientifique" caption="Synthèse statistique du comportement du système." />
+          <div className="mt-5 grid gap-3 text-sm leading-6 text-kcs-muted">
+            <p>La province dominante représente <strong className="text-white">{stats.topProvinceShare}%</strong> du volume total.</p>
+            <p>L'indice de concentration est <strong className="text-white">{stats.concentrationIndex.toFixed(2)}</strong>. Plus il est proche de 1, plus les candidatures sont réparties sur plusieurs provinces.</p>
+            <p>Le ratio dossiers complets mesure la présence d'une transaction, d'une province, d'une motivation et d'un statut exploitable.</p>
+          </div>
+          <div className="mt-5 grid gap-3">
+            <ProgressRow label="Dossiers complets" value={stats.completionRate} />
+            <ProgressRow label="Paiements traçables" value={stats.paymentRate} />
+            <ProgressRow label="Décisions communiquées" value={stats.resultRate} />
+          </div>
+        </section>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
         <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
           <SectionTitle icon={ShieldCheck} title="Indicateurs de contrôle" caption="Qualité des dossiers et travail restant." />
@@ -590,8 +663,8 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {metrics.slice(0, 8).map((row) => (
-                  <tr key={row.id} className="border-t border-white/10">
+                {metrics.map((row) => (
+                  <tr key={row.id} onClick={() => setSelectedApplication(row)} className="cursor-pointer border-t border-white/10 hover:bg-white/[0.04]">
                     <td className="px-4 py-3 font-medium">{`${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || "Candidat"}</td>
                     <td className="px-4 py-3 text-kcs-muted">{row.province || "Non renseignée"}</td>
                     <td className="px-4 py-3 text-kcs-muted">{row.payment_operator || "Non renseigné"}</td>
@@ -603,6 +676,7 @@ function AdminDashboard() {
           </div>
         </section>
       </div>
+      {selectedApplication ? <ApplicationDetailDialog application={selectedApplication} onClose={() => setSelectedApplication(null)} /> : null}
     </div>
   );
 }
@@ -658,8 +732,8 @@ function PaymentPanel({ reference }: { reference: string }) {
           </label>
           <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06] sm:col-span-2">
             <Upload className="h-4 w-4" />
-            Ajouter une preuve
-            <input form="application-form" name="payment_proof" type="file" accept="image/*,.pdf" required className="sr-only" />
+            Ajouter une preuve facultative
+            <input form="application-form" name="payment_proof" type="file" accept="image/*,.pdf" className="sr-only" />
           </label>
         </div>
       </div>
@@ -674,6 +748,10 @@ function buildAdminStats(rows: AdminMetric[]) {
   const approved = rows.filter((row) => ["approved", "eligible"].includes(row.status)).length;
   const results = rows.filter((row) => Boolean(row.result_message)).length;
   const pending = rows.filter((row) => ["submitted", "payment_pending", "payment_under_review", "documents_required", "under_review"].includes(row.status)).length;
+  const complete = rows.filter((row) => Boolean(row.transaction_id && row.province && row.motivation && row.status)).length;
+  const byProvince = groupRows(rows, (row) => row.province || "Non renseignée");
+  const topProvinceShare = percentage(byProvince[0]?.total ?? 0, total);
+  const concentrationIndex = byProvince.length / Math.max(rows.length, 1);
 
   return {
     total: rows.length,
@@ -683,11 +761,33 @@ function buildAdminStats(rows: AdminMetric[]) {
     proofRate: percentage(proofs, total),
     resultRate: percentage(results, total),
     pendingRate: percentage(pending, total),
-    byProvince: groupRows(rows, (row) => row.province || "Non renseignée").slice(0, 12),
+    completionRate: percentage(complete, total),
+    topProvinceShare,
+    concentrationIndex,
+    byProvince: byProvince.slice(0, 12),
     byStatus: groupRows(rows, (row) => formatStatus(row.status)),
     byPaymentOperator: groupRows(rows, (row) => row.payment_operator || "Non renseigné"),
-    byDay: groupRows(rows, (row) => new Date(row.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })).reverse()
+    byDay: groupRows(rows, (row) => new Date(row.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })).reverse(),
+    provincePerformance: buildProvincePerformance(rows).slice(0, 12)
   };
+}
+
+function buildProvincePerformance(rows: AdminMetric[]) {
+  const map = new Map<string, { total: number; accepted: number }>();
+
+  rows.forEach((row) => {
+    const key = row.province || "Non renseignée";
+    const current = map.get(key) ?? { total: 0, accepted: 0 };
+    current.total += 1;
+    current.accepted += ["approved", "eligible"].includes(row.status) ? 1 : 0;
+    map.set(key, current);
+  });
+
+  return Array.from(map, ([name, value]) => ({
+    name,
+    taux: percentage(value.accepted, value.total),
+    total: value.total
+  })).sort((a, b) => b.taux - a.taux || b.total - a.total);
 }
 
 function groupRows(rows: AdminMetric[], getKey: (row: AdminMetric) => string) {
@@ -759,6 +859,78 @@ function ProgressRow({ label, value }: { label: string; value: number }) {
       <div className="h-2 overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full bg-kcs-gold" style={{ width: `${value}%` }} />
       </div>
+    </div>
+  );
+}
+
+function ApplicationDetailDialog({ application, onClose }: { application: AdminMetric; onClose: () => void }) {
+  const fullName = `${application.first_name ?? ""} ${application.last_name ?? ""}`.trim() || "Candidat";
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 py-6">
+      <section className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/10 bg-[#081b30] p-4 sm:p-5">
+          <div>
+            <h2 className="text-xl font-semibold text-white">{fullName}</h2>
+            <p className="mt-1 text-sm text-kcs-muted">{application.payment_reference || application.id}</p>
+          </div>
+          <button type="button" onClick={onClose} className="h-9 rounded-md border border-white/10 px-3 text-sm font-semibold text-kcs-muted hover:bg-white/[0.06] hover:text-white">
+            Fermer
+          </button>
+        </div>
+        <div className="grid gap-5 p-4 sm:p-5">
+          <div className="grid gap-3 md:grid-cols-3">
+            <MiniInfo label="Statut" value={formatStatus(application.status)} />
+            <MiniInfo label="Province" value={application.province || "Non renseignée"} />
+            <MiniInfo label="Paiement" value={application.payment_operator || "Non renseigné"} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <DetailSection title="Identité">
+              <DetailRow label="Nom complet" value={fullName} />
+              <DetailRow label="Date de naissance" value={application.date_of_birth || "Non renseignée"} />
+              <DetailRow label="Pays de naissance" value={application.country_of_birth || "Non renseigné"} />
+              <DetailRow label="Document" value={application.identity_number || "Non renseigné"} />
+              <DetailRow label="Niveau d'études" value={application.education_level || "Non renseigné"} />
+            </DetailSection>
+            <DetailSection title="Contact">
+              <DetailRow label="E-mail" value={application.email || "Masqué ou non disponible"} />
+              <DetailRow label="Téléphone" value={application.phone || "Non renseigné"} />
+              <DetailRow label="Responsable" value={application.guardian_name || "Non renseigné"} />
+              <DetailRow label="Téléphone responsable" value={application.guardian_phone || "Non renseigné"} />
+              <DetailRow label="Adresse" value={application.residential_address || "Non renseignée"} />
+            </DetailSection>
+          </div>
+          <DetailSection title="Paiement et documents">
+            <div className="grid gap-3 md:grid-cols-3">
+              <MiniInfo label="Référence" value={application.payment_reference || "Non renseignée"} />
+              <MiniInfo label="ID transaction" value={application.transaction_id || "Non reçu"} />
+              <MiniInfo label="Preuve" value={application.payment_proof_path || "Facultative, non jointe"} />
+            </div>
+          </DetailSection>
+          <DetailSection title="Motivation et décision">
+            <p className="rounded-md border border-white/10 bg-[#061426] p-3 text-sm leading-6 text-kcs-muted">{application.motivation || "Motivation non disponible dans la vue actuelle."}</p>
+            <p className="mt-3 rounded-md border border-kcs-gold/25 bg-kcs-gold/10 p-3 text-sm leading-6 text-kcs-muted">{application.result_message || application.admin_message || "Aucun résultat administratif communiqué."}</p>
+          </DetailSection>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-white/10 bg-[#061426] p-4">
+      <h3 className="mb-3 font-semibold text-white">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 justify-between gap-3 border-b border-white/10 py-2 text-sm last:border-0">
+      <span className="text-kcs-muted">{label}</span>
+      <span className="max-w-[60%] break-words text-right font-medium text-white">{value}</span>
     </div>
   );
 }
@@ -878,20 +1050,26 @@ function SelectField({ name, label, options }: { name: string; label: string; op
   );
 }
 
-function SuccessDialog({ message, onClose }: { message: string; onClose: () => void }) {
+function FeedbackDialog({ dialog, onClose }: { dialog: NonNullable<DialogState>; onClose: () => void }) {
+  const toneClass = {
+    success: "border-kcs-success/40 bg-kcs-success/15 text-kcs-success",
+    error: "border-kcs-danger/40 bg-kcs-danger/15 text-[#ffb2ad]",
+    info: "border-kcs-cyan/40 bg-kcs-cyan/15 text-kcs-cyan"
+  }[dialog.tone];
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4">
-      <section className="w-full max-w-md rounded-lg border border-kcs-success/40 bg-[#081b30] p-5 shadow-premium">
+      <section className={`w-full max-w-md rounded-lg border bg-[#081b30] p-5 shadow-premium ${toneClass}`}>
         <div className="flex items-start gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-kcs-success/15 text-kcs-success">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-white/10">
             <CheckCircle2 className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-white">Candidature déposée</h2>
-            <p className="mt-2 text-sm leading-6 text-kcs-muted">{message}</p>
+            <h2 className="text-lg font-semibold text-white">{dialog.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-kcs-muted">{dialog.message}</p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="mt-5 h-10 w-full rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426]">
+        <button type="button" onClick={onClose} className="mt-5 h-10 w-full rounded-md bg-white px-4 text-sm font-semibold text-[#061426]">
           Fermer
         </button>
       </section>
