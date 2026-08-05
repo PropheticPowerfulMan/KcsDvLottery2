@@ -5,7 +5,6 @@
 update auth.users
 set
   email_confirmed_at = coalesce(email_confirmed_at, now()),
-  confirmed_at = coalesce(confirmed_at, now()),
   raw_user_meta_data =
     coalesce(raw_user_meta_data, '{}'::jsonb)
     || jsonb_build_object(

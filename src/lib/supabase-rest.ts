@@ -8,7 +8,6 @@ export const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHAB
 export const isSupabaseConfigured = Boolean(supabaseRestUrl && supabaseProjectUrl && supabasePublishableKey);
 
 type SupabasePayload = Record<string, string>;
-
 export type SupabaseResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
@@ -23,11 +22,68 @@ export async function insertApplication(payload: SupabasePayload): Promise<Supab
   });
 }
 
+export async function signUpWithPassword(email: string, password: string, fullName: string): Promise<SupabaseResult<unknown>> {
+  return supabaseFetch(`${supabaseProjectUrl}/auth/v1/signup`, {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+      data: {
+        role: "student",
+        full_name: fullName
+      }
+    })
+  });
+}
+
 export async function signInWithPassword(email: string, password: string): Promise<SupabaseResult<unknown>> {
   return supabaseFetch(`${supabaseProjectUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
     body: JSON.stringify({ email, password })
   });
+}
+
+export async function getOwnApplications(accessToken: string): Promise<SupabaseResult<unknown[]>> {
+  return supabaseFetch(`${supabaseRestUrl}/applications?select=*&order=created_at.desc`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export async function uploadPaymentProof(reference: string, file: File): Promise<SupabaseResult<{ path: string }>> {
+  if (!isSupabaseConfigured) {
+    return { ok: false, error: "Supabase n'est pas configuré." };
+  }
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const objectName = `${Date.now()}-${safeName}`;
+  const path = `${reference}/${objectName}`;
+
+  try {
+    const response = await fetch(`${supabaseProjectUrl}/storage/v1/object/payment-proofs/${reference}/${encodeURIComponent(objectName)}`, {
+      method: "POST",
+      headers: {
+        apikey: supabasePublishableKey,
+        Authorization: `Bearer ${supabasePublishableKey}`,
+        "Content-Type": file.type || "application/octet-stream",
+        "x-upsert": "true"
+      },
+      body: file
+    });
+
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+      return { ok: false, error: translateSupabaseError(data?.message ?? data?.error ?? response.statusText) };
+    }
+
+    return { ok: true, data: { path } };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? translateSupabaseError(error.message) : "L'envoi de la preuve a échoué." };
+  }
 }
 
 async function supabaseFetch<T>(url: string, init: RequestInit): Promise<SupabaseResult<T>> {
@@ -72,6 +128,10 @@ function translateSupabaseError(message: string) {
 
   if (lowerMessage.includes("duplicate key")) {
     return "Un dossier avec cette référence existe déjà.";
+  }
+
+  if (lowerMessage.includes("user already registered") || lowerMessage.includes("already registered")) {
+    return "Un compte existe déjà avec cette adresse e-mail.";
   }
 
   if (lowerMessage.includes("failed to fetch")) {

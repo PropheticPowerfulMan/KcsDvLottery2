@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { KcsBrand } from "@/components/branding/kcs-brand";
-import { insertApplication, isSupabaseConfigured, signInWithPassword } from "@/lib/supabase-rest";
+import { getOwnApplications, insertApplication, isSupabaseConfigured, signInWithPassword, signUpWithPassword, uploadPaymentProof } from "@/lib/supabase-rest";
 
 const paymentReferencePrefix = "KCS-2026";
 
@@ -42,9 +42,11 @@ const paymentMethods = [
 
 type View = "register" | "login" | "student" | "admin";
 type Notice = { tone: "success" | "error" | "info"; text: string } | null;
+type StudentSession = { accessToken: string; email: string } | null;
 
 export default function Home() {
   const [view, setView] = useState<View>("register");
+  const [studentSession, setStudentSession] = useState<StudentSession>(null);
 
   return (
     <main className="min-h-screen bg-[#020814] text-[#f7f9fc]">
@@ -96,8 +98,8 @@ export default function Home() {
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {view === "register" && <RegistrationPanel />}
-        {view === "login" && <LoginPanel onStudent={() => setView("student")} onAdmin={() => setView("admin")} />}
-        {view === "student" && <StudentDashboard />}
+        {view === "login" && <LoginPanel onStudent={(session) => { setStudentSession(session); setView("student"); }} onAdmin={() => setView("admin")} />}
+        {view === "student" && <StudentDashboard session={studentSession} />}
         {view === "admin" && <AdminDashboard />}
       </section>
     </main>
@@ -108,6 +110,7 @@ function RegistrationPanel() {
   const [notice, setNotice] = useState<Notice>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reference, setReference] = useState(`${paymentReferencePrefix}-00000`);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   useEffect(() => {
     setReference(`${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`);
@@ -116,11 +119,50 @@ function RegistrationPanel() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
-    setNotice({ tone: "info", text: "Envoi du dossier en cours..." });
+    setNotice({ tone: "info", text: "Création du compte candidat..." });
 
     const formData = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
-    const result = await insertApplication({ ...payload, payment_reference: reference, status: "submitted" });
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const firstName = String(formData.get("first_name") ?? "");
+    const lastName = String(formData.get("last_name") ?? "");
+    const proof = formData.get("payment_proof");
+    const proofFile = proof instanceof File && proof.size > 0 ? proof : null;
+    const ignoredFields = new Set(["password", "payment_proof"]);
+    const payload = Object.fromEntries(Array.from(formData.entries()).filter(([key]) => !ignoredFields.has(key)).map(([key, value]) => [key, String(value)])) as Record<string, string>;
+
+    const signupResult = await signUpWithPassword(email, password, `${firstName} ${lastName}`.trim());
+
+    const signupError = signupResult.ok ? "" : signupResult.error.toLowerCase();
+
+    if (!signupResult.ok && !signupError.includes("already") && !signupError.includes("existe déjà")) {
+      setIsSubmitting(false);
+      setNotice({ tone: "error", text: `Le compte candidat n'a pas pu être créé : ${signupResult.error}` });
+      return;
+    }
+
+    let paymentProofPath = "";
+
+    if (proofFile) {
+      setNotice({ tone: "info", text: "Envoi de la preuve de paiement..." });
+      const uploadResult = await uploadPaymentProof(reference, proofFile);
+
+      if (!uploadResult.ok) {
+        setIsSubmitting(false);
+        setNotice({ tone: "error", text: `La preuve de paiement n'a pas pu être envoyée : ${uploadResult.error}` });
+        return;
+      }
+
+      paymentProofPath = uploadResult.data.path;
+    }
+
+    setNotice({ tone: "info", text: "Envoi du dossier en cours..." });
+    const result = await insertApplication({
+      ...payload,
+      payment_reference: reference,
+      payment_proof_path: paymentProofPath,
+      status: "submitted"
+    });
 
     setIsSubmitting(false);
     setNotice(
@@ -132,7 +174,7 @@ function RegistrationPanel() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <form onSubmit={handleSubmit} className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
+      <form id="application-form" onSubmit={handleSubmit} className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
         <SectionTitle icon={UserPlus} title="Nouvelle candidature" caption="Utiliser les noms légaux exactement comme ils apparaissent sur les documents officiels." />
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -141,6 +183,12 @@ function RegistrationPanel() {
           <Field name="date_of_birth" label="Date de naissance" type="date" required />
           <Field name="country_of_birth" label="Pays de naissance" placeholder="RD Congo" required />
           <Field name="email" label="Adresse e-mail" type="email" placeholder="candidat@example.com" required />
+          <PasswordField
+            label="Mot de passe du compte"
+            placeholder="Créer un mot de passe"
+            isVisible={isPasswordVisible}
+            onToggle={() => setIsPasswordVisible((value) => !value)}
+          />
           <Field name="phone" label="Numéro de téléphone" placeholder="+243..." required />
           <Field name="education_level" label="Niveau d'études" placeholder="Diplôme d'État" required />
           <Field name="identity_number" label="Numéro passeport ou carte d'identité" placeholder="Référence du document" required />
@@ -174,7 +222,7 @@ function RegistrationPanel() {
   );
 }
 
-function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: () => void }) {
+function LoginPanel({ onStudent, onAdmin }: { onStudent: (session: { accessToken: string; email: string }) => void; onAdmin: () => void }) {
   const [notice, setNotice] = useState<Notice>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -190,7 +238,17 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
     const result = await signInWithPassword(email, password);
 
     setIsSubmitting(false);
-    setNotice(result.ok ? { tone: "success", text: "Connexion acceptée par Supabase Auth." } : { tone: "error", text: `Connexion refusée : ${result.error}` });
+    if (!result.ok) {
+      setNotice({ tone: "error", text: `Connexion refusée : ${result.error}` });
+      return;
+    }
+
+    const session = result.data as { access_token?: string; user?: { email?: string } };
+    setNotice({ tone: "success", text: "Connexion acceptée par Supabase Auth." });
+
+    if (session.access_token) {
+      onStudent({ accessToken: session.access_token, email: session.user?.email ?? email });
+    }
   }
 
   return (
@@ -210,7 +268,7 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
       <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
         <h3 className="font-semibold">Espaces protégés</h3>
         <div className="mt-4 grid gap-3">
-          <button onClick={onStudent} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
+          <button type="button" onClick={() => setNotice({ tone: "info", text: "Connectez-vous avec l'adresse e-mail et le mot de passe du candidat pour ouvrir l'espace étudiant." })} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
             Espace étudiant <ChevronRight className="h-4 w-4" />
           </button>
           <button onClick={onAdmin} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
@@ -222,26 +280,52 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
   );
 }
 
-function StudentDashboard() {
+function StudentDashboard({ session }: { session: StudentSession }) {
+  const [notice, setNotice] = useState<Notice>(session ? { tone: "info", text: "Chargement du dossier candidat..." } : null);
+  const [applications, setApplications] = useState<Record<string, string>[]>([]);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    getOwnApplications(session.accessToken).then((result) => {
+      if (!result.ok) {
+        setNotice({ tone: "error", text: `Impossible de charger le dossier : ${result.error}` });
+        return;
+      }
+
+      const rows = Array.isArray(result.data) ? (result.data as Record<string, string>[]) : [];
+      setApplications(rows);
+      setNotice(rows.length ? null : { tone: "info", text: "Aucun dossier n'est encore lié à ce compte." });
+    });
+  }, [session]);
+
+  const latestApplication = applications[0];
+  const resultMessage = latestApplication?.result_message || latestApplication?.admin_message || "Le résultat sera affiché ici dès que l'administration aura terminé la revue.";
+
   return (
     <div className="grid gap-6">
       <DashboardHeader title="Espace étudiant" subtitle="Suivi du dossier candidat" tone="En attente des données vérifiées" />
+      {notice ? <NoticeBox notice={notice} /> : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={ClipboardCheck} label="Candidature" value="Synchronisation requise" />
-        <Stat icon={CreditCard} label="Paiement" value="Non vérifié" />
+        <Stat icon={ClipboardCheck} label="Candidature" value={latestApplication?.status || "Connexion requise"} />
+        <Stat icon={CreditCard} label="Paiement" value={latestApplication?.transaction_id ? "Transaction reçue" : "Non vérifié"} />
         <Stat icon={FileCheck2} label="Documents" value="Requis" />
         <Stat icon={BadgeCheck} label="Éligibilité" value="En revue" />
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-          <h3 className="font-semibold">Étapes du dossier</h3>
+          <h3 className="font-semibold">Message du résultat</h3>
+          <p className="mt-3 rounded-md border border-white/10 bg-[#061426] p-3 text-sm leading-6 text-kcs-muted">{resultMessage}</p>
+          <h3 className="mt-5 font-semibold">Étapes du dossier</h3>
           <div className="mt-4 grid gap-3">
             {["Compte créé dans Supabase Auth", "Formulaire de candidature envoyé", "Preuve de paiement ajoutée", "Revue finance terminée"].map((item) => (
               <ChecklistItem key={item}>{item}</ChecklistItem>
             ))}
           </div>
         </section>
-        <PaymentPanel reference={`${paymentReferencePrefix}-#####`} />
+        <PaymentPanel reference={latestApplication?.payment_reference || `${paymentReferencePrefix}-#####`} />
       </div>
     </div>
   );
@@ -289,11 +373,20 @@ function PaymentPanel({ reference }: { reference: string }) {
           <p className="min-w-0 break-words font-semibold">Référence manuelle : {reference}</p>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field name="transaction_id" label="ID de transaction" placeholder="Référence de l'opérateur" />
-          <button className="flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06]" type="button">
+          <label className="min-w-0">
+            <span className="mb-2 block text-sm font-medium">ID de transaction</span>
+            <input
+              form="application-form"
+              name="transaction_id"
+              placeholder="Référence de l'opérateur"
+              className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+            />
+          </label>
+          <label className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06]">
             <Upload className="h-4 w-4" />
             Ajouter une preuve
-          </button>
+            <input form="application-form" name="payment_proof" type="file" accept="image/*,.pdf" className="sr-only" />
+          </label>
         </div>
       </div>
     </InfoPanel>
@@ -356,26 +449,26 @@ function ChecklistItem({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PasswordField({ isVisible, onToggle }: { isVisible: boolean; onToggle: () => void }) {
+function PasswordField({ label = "Mot de passe", placeholder = "Mot de passe", isVisible, onToggle }: { label?: string; placeholder?: string; isVisible: boolean; onToggle: () => void }) {
   const Icon = isVisible ? EyeOff : Eye;
-  const label = isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe";
+  const toggleLabel = isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe";
 
   return (
     <label className="min-w-0">
-      <span className="mb-2 block text-sm font-medium">Mot de passe</span>
+      <span className="mb-2 block text-sm font-medium">{label}</span>
       <div className="flex h-10 min-w-0 items-center rounded-md border border-white/10 bg-[#061426] focus-within:border-kcs-gold/70 focus-within:ring-2 focus-within:ring-kcs-gold/20">
         <input
           name="password"
           type={isVisible ? "text" : "password"}
           required
-          placeholder="Mot de passe"
+          placeholder={placeholder}
           className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70"
         />
         <button
           type="button"
           onClick={onToggle}
-          aria-label={label}
-          title={label}
+          aria-label={toggleLabel}
+          title={toggleLabel}
           className="grid h-full w-10 shrink-0 place-items-center rounded-r-md text-kcs-muted hover:bg-white/[0.06] hover:text-white"
         >
           <Icon className="h-4 w-4" />
