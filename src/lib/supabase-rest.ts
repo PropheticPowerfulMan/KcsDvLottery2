@@ -52,6 +52,12 @@ export async function getOwnApplications(accessToken: string): Promise<SupabaseR
   });
 }
 
+export async function getAdminApplicationMetrics(): Promise<SupabaseResult<unknown[]>> {
+  return supabaseFetch(`${supabaseRestUrl}/admin_application_metrics?select=*&order=created_at.desc`, {
+    method: "GET"
+  });
+}
+
 export async function uploadPaymentProof(reference: string, file: File): Promise<SupabaseResult<{ path: string }>> {
   if (!isSupabaseConfigured) {
     return { ok: false, error: "Supabase n'est pas configuré." };

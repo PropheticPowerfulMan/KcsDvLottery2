@@ -16,6 +16,7 @@ create table if not exists public.applications (
   identity_number text not null,
   guardian_name text,
   guardian_phone text,
+  province text,
   residential_address text not null,
   motivation text,
   payment_reference text not null unique,
@@ -48,6 +49,7 @@ create table if not exists public.applications (
 
 alter table public.applications
   add column if not exists user_id uuid references auth.users(id) on delete set null,
+  add column if not exists province text,
   add column if not exists motivation text,
   add column if not exists payment_operator text,
   add column if not exists transaction_id text,
@@ -58,6 +60,7 @@ alter table public.applications
 
 create index if not exists applications_email_idx on public.applications (lower(email));
 create index if not exists applications_user_id_idx on public.applications (user_id);
+create index if not exists applications_province_idx on public.applications (province);
 create index if not exists applications_payment_reference_idx on public.applications (payment_reference);
 create index if not exists applications_status_idx on public.applications (status);
 create index if not exists applications_created_at_idx on public.applications (created_at desc);
@@ -152,6 +155,7 @@ with check (
   and length(trim(email)) >= 5
   and length(trim(phone)) >= 5
   and length(trim(identity_number)) >= 2
+  and (province is null or length(trim(province)) >= 2)
   and length(trim(residential_address)) >= 3
   and (motivation is null or length(trim(motivation)) >= 10)
   and (payment_operator is null or length(trim(payment_operator)) >= 2)
@@ -226,3 +230,19 @@ grant insert on public.applications to anon, authenticated;
 grant update (payment_operator, transaction_id, payment_proof_path) on public.applications to authenticated;
 grant select on public.applications to authenticated;
 grant select, update on public.result_email_queue to service_role;
+
+create or replace view public.admin_application_metrics as
+select
+  id,
+  first_name,
+  last_name,
+  province,
+  status,
+  payment_operator,
+  transaction_id,
+  payment_proof_path,
+  result_message,
+  created_at
+from public.applications;
+
+grant select on public.admin_application_metrics to anon, authenticated;

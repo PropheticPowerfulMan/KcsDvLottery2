@@ -12,16 +12,32 @@ import {
   GraduationCap,
   Landmark,
   LockKeyhole,
+  MapPinned,
   ReceiptText,
   ShieldCheck,
+  TrendingUp,
   Upload,
   UserPlus,
   Users,
   type LucideIcon
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
 import { FormEvent, useEffect, useState } from "react";
 import { KcsBrand } from "@/components/branding/kcs-brand";
-import { getOwnApplications, insertApplication, isSupabaseConfigured, signInWithPassword, signUpWithPassword, uploadPaymentProof } from "@/lib/supabase-rest";
+import { getAdminApplicationMetrics, getOwnApplications, insertApplication, isSupabaseConfigured, signInWithPassword, signUpWithPassword, uploadPaymentProof } from "@/lib/supabase-rest";
 
 const paymentReferencePrefix = "KCS-2026";
 
@@ -56,9 +72,65 @@ const birthMonths = [
   { value: "12", label: "Décembre" }
 ];
 
+const rdcProvinces = [
+  "Bas-Uele",
+  "Équateur",
+  "Haut-Katanga",
+  "Haut-Lomami",
+  "Haut-Uele",
+  "Ituri",
+  "Kasaï",
+  "Kasaï-Central",
+  "Kasaï-Oriental",
+  "Kinshasa",
+  "Kongo-Central",
+  "Kwango",
+  "Kwilu",
+  "Lomami",
+  "Lualaba",
+  "Mai-Ndombe",
+  "Maniema",
+  "Mongala",
+  "Nord-Kivu",
+  "Nord-Ubangi",
+  "Sankuru",
+  "Sud-Kivu",
+  "Sud-Ubangi",
+  "Tanganyika",
+  "Tshopo",
+  "Tshuapa"
+];
+
+const chartColors = ["#f2c94c", "#31d0aa", "#38bdf8", "#fb7185", "#a78bfa", "#f97316", "#22c55e", "#e879f9"];
+
 type View = "register" | "login" | "student" | "admin";
 type Notice = { tone: "success" | "error" | "info"; text: string } | null;
 type StudentSession = { accessToken: string; email: string } | null;
+type AdminMetric = {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  province?: string;
+  status: string;
+  payment_operator?: string;
+  transaction_id?: string;
+  payment_proof_path?: string;
+  result_message?: string;
+  created_at: string;
+};
+
+const demoAdminMetrics: AdminMetric[] = [
+  { id: "demo-01", first_name: "Grace", last_name: "Mbuyi", province: "Kinshasa", status: "approved", payment_operator: "M-Pesa", transaction_id: "MP250001", payment_proof_path: "demo/01.pdf", result_message: "Candidature approuvée.", created_at: "2026-08-01T08:15:00Z" },
+  { id: "demo-02", first_name: "Daniel", last_name: "Kabongo", province: "Haut-Katanga", status: "under_review", payment_operator: "Airtel Money", transaction_id: "AM250002", payment_proof_path: "demo/02.jpg", created_at: "2026-08-01T10:20:00Z" },
+  { id: "demo-03", first_name: "Sarah", last_name: "Ilunga", province: "Kongo-Central", status: "payment_under_review", payment_operator: "Orange Money", transaction_id: "OM250003", payment_proof_path: "demo/03.png", created_at: "2026-08-02T09:35:00Z" },
+  { id: "demo-04", first_name: "Moise", last_name: "Kanku", province: "Nord-Kivu", status: "submitted", payment_operator: "M-Pesa", transaction_id: "MP250004", created_at: "2026-08-02T12:10:00Z" },
+  { id: "demo-05", first_name: "Aline", last_name: "Bisimwa", province: "Sud-Kivu", status: "eligible", payment_operator: "Airtel Money", transaction_id: "AM250005", payment_proof_path: "demo/05.pdf", result_message: "Éligible pour l'étape suivante.", created_at: "2026-08-03T07:50:00Z" },
+  { id: "demo-06", first_name: "Patrick", last_name: "Tshibangu", province: "Kasaï-Central", status: "documents_required", payment_operator: "Orange Money", transaction_id: "OM250006", created_at: "2026-08-03T14:05:00Z" },
+  { id: "demo-07", first_name: "Merveille", last_name: "Lutete", province: "Kwilu", status: "rejected", payment_operator: "M-Pesa", transaction_id: "MP250007", payment_proof_path: "demo/07.jpg", result_message: "Dossier rejeté après vérification.", created_at: "2026-08-04T08:30:00Z" },
+  { id: "demo-08", first_name: "Jonathan", last_name: "Moke", province: "Tshopo", status: "approved", payment_operator: "Airtel Money", transaction_id: "AM250008", payment_proof_path: "demo/08.pdf", result_message: "Candidature approuvée.", created_at: "2026-08-04T11:45:00Z" },
+  { id: "demo-09", first_name: "Rebecca", last_name: "Nsimba", province: "Lualaba", status: "ineligible", payment_operator: "Orange Money", transaction_id: "OM250009", payment_proof_path: "demo/09.png", result_message: "Non éligible.", created_at: "2026-08-05T09:00:00Z" },
+  { id: "demo-10", first_name: "Emmanuel", last_name: "Wemba", province: "Ituri", status: "submitted", payment_operator: "M-Pesa", transaction_id: "MP250010", payment_proof_path: "demo/10.jpg", created_at: "2026-08-05T13:25:00Z" }
+];
 
 export default function Home() {
   const [view, setView] = useState<View>("register");
@@ -233,6 +305,20 @@ function RegistrationPanel() {
           <Field name="guardian_name" label="Nom complet du responsable" autoComplete="off" />
           <Field name="guardian_phone" label="Téléphone du responsable" autoComplete="off" />
           <label className="min-w-0">
+            <span className="mb-2 block text-sm font-medium">Province de résidence</span>
+            <select
+              name="province"
+              required
+              defaultValue=""
+              className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+            >
+              <option value="" disabled>Choisir la province</option>
+              {rdcProvinces.map((province) => (
+                <option key={province} value={province}>{province}</option>
+              ))}
+            </select>
+          </label>
+          <label className="min-w-0">
             <span className="mb-2 block text-sm font-medium">Adresse de résidence</span>
             <input name="residential_address" required autoComplete="off" className="h-10 w-full min-w-0 rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" />
           </label>
@@ -346,6 +432,7 @@ function StudentDashboard({ session }: { session: StudentSession }) {
 
   const latestApplication = applications[0];
   const resultMessage = latestApplication?.result_message || latestApplication?.admin_message || "Le résultat sera affiché ici dès que l'administration aura terminé la revue.";
+  const progress = getStudentProgress(latestApplication?.status);
 
   return (
     <div className="grid gap-6">
@@ -359,13 +446,31 @@ function StudentDashboard({ session }: { session: StudentSession }) {
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-          <h3 className="font-semibold">Message du résultat</h3>
-          <p className="mt-3 rounded-md border border-white/10 bg-[#061426] p-3 text-sm leading-6 text-kcs-muted">{resultMessage}</p>
-          <h3 className="mt-5 font-semibold">Étapes du dossier</h3>
-          <div className="mt-4 grid gap-3">
-            {["Compte créé dans Supabase Auth", "Formulaire de candidature envoyé", "Preuve de paiement ajoutée", "Revue finance terminée"].map((item) => (
-              <ChecklistItem key={item}>{item}</ChecklistItem>
-            ))}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="font-semibold">Avancement du dossier</h3>
+              <p className="mt-1 text-sm text-kcs-muted">{latestApplication?.payment_reference || "Connectez-vous pour voir votre référence."}</p>
+            </div>
+            <StatusBadge label={latestApplication ? formatStatus(latestApplication.status) : "Connexion requise"} />
+          </div>
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="text-kcs-muted">Progression</span>
+              <span className="font-semibold">{progress}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-kcs-success" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <MiniInfo label="Province" value={latestApplication?.province || "À compléter"} />
+            <MiniInfo label="Paiement mobile" value={latestApplication?.payment_operator || "En attente"} />
+            <MiniInfo label="ID transaction" value={latestApplication?.transaction_id || "Non reçu"} />
+            <MiniInfo label="Preuve" value={latestApplication?.payment_proof_path ? "Ajoutée" : "Non ajoutée"} />
+          </div>
+          <div className="mt-5 rounded-md border border-kcs-gold/25 bg-kcs-gold/10 p-4">
+            <h3 className="font-semibold text-white">Message du résultat</h3>
+            <p className="mt-2 text-sm leading-6 text-kcs-muted">{resultMessage}</p>
           </div>
         </section>
         <PaymentPanel reference={latestApplication?.payment_reference || `${paymentReferencePrefix}-#####`} />
@@ -375,23 +480,129 @@ function StudentDashboard({ session }: { session: StudentSession }) {
 }
 
 function AdminDashboard() {
+  const [notice, setNotice] = useState<Notice>({ tone: "info", text: "Chargement des statistiques Supabase..." });
+  const [metrics, setMetrics] = useState<AdminMetric[]>(demoAdminMetrics);
+  const [source, setSource] = useState("Données de démonstration");
+
+  useEffect(() => {
+    getAdminApplicationMetrics().then((result) => {
+      if (!result.ok) {
+        setNotice({ tone: "info", text: "La vue Supabase des statistiques n'est pas encore disponible. Le dashboard affiche les 10 candidatures de test." });
+        return;
+      }
+
+      const rows = Array.isArray(result.data) ? (result.data as AdminMetric[]) : [];
+
+      if (!rows.length) {
+        setNotice({ tone: "info", text: "Aucune candidature Supabase trouvée. Le dashboard affiche les 10 candidatures de test." });
+        return;
+      }
+
+      setMetrics(rows);
+      setSource("Supabase en direct");
+      setNotice(null);
+    });
+  }, []);
+
+  const stats = buildAdminStats(metrics);
+
   return (
     <div className="grid gap-6">
-      <DashboardHeader title="Espace administration" subtitle="Console de revue KCS" tone="Traitement connecté à Supabase" />
+      <DashboardHeader title="Espace administration" subtitle="Pilotage statistique des candidatures KCS" tone={source} />
+      {notice ? <NoticeBox notice={notice} /> : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={Users} label="Candidatures" value="Données réelles requises" />
-        <Stat icon={Landmark} label="Paiements vérifiés" value="File finance" />
-        <Stat icon={ShieldCheck} label="Sécurité" value="RLS requis" />
-        <Stat icon={GraduationCap} label="Candidats éligibles" value="Revue uniquement" />
+        <Stat icon={Users} label="Candidatures" value={String(stats.total)} />
+        <Stat icon={Landmark} label="Paiements tracés" value={`${stats.paymentRate}%`} />
+        <Stat icon={MapPinned} label="Provinces actives" value={String(stats.provinceCount)} />
+        <Stat icon={TrendingUp} label="Taux d'acceptation" value={`${stats.approvalRate}%`} />
       </div>
-      <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
-        <div className="border-b border-white/10 p-4 sm:p-5">
-          <SectionTitle icon={Users} title="File des candidatures" caption="Connecter ce panneau à une requête Supabase serveur protégée avant d'exposer les dossiers privés." />
-        </div>
-        <div className="p-4 text-sm leading-6 text-kcs-muted sm:p-5">
-          Les données administratives doivent être chargées avec des politiques côté serveur, des contrôles de rôle et des règles RLS privées. La clé publique ne doit jamais recevoir un accès large aux dossiers privés des candidats.
-        </div>
-      </section>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <ChartPanel title="Candidatures par province" subtitle="Répartition territoriale RDC">
+          <ResponsiveContainer width="100%" height={310}>
+            <BarChart data={stats.byProvince}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#9aa8bd", fontSize: 11 }} interval={0} angle={-28} textAnchor="end" height={86} />
+              <YAxis tick={{ fill: "#9aa8bd", fontSize: 12 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: "#081b30", border: "1px solid rgba(255,255,255,.12)", color: "#fff" }} />
+              <Bar dataKey="total" radius={[6, 6, 0, 0]} fill="#f2c94c" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartPanel>
+        <ChartPanel title="Statuts des dossiers" subtitle="Pipeline administratif">
+          <ResponsiveContainer width="100%" height={310}>
+            <PieChart>
+              <Pie data={stats.byStatus} dataKey="total" nameKey="name" innerRadius={64} outerRadius={108} paddingAngle={3}>
+                {stats.byStatus.map((entry, index) => (
+                  <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ background: "#081b30", border: "1px solid rgba(255,255,255,.12)", color: "#fff" }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <LegendList rows={stats.byStatus} />
+        </ChartPanel>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ChartPanel title="Évolution quotidienne" subtitle="Volume de dépôts par jour">
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={stats.byDay}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#9aa8bd", fontSize: 12 }} />
+              <YAxis tick={{ fill: "#9aa8bd", fontSize: 12 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: "#081b30", border: "1px solid rgba(255,255,255,.12)", color: "#fff" }} />
+              <Area type="monotone" dataKey="total" stroke="#31d0aa" fill="#31d0aa" fillOpacity={0.18} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartPanel>
+        <ChartPanel title="Paiements mobiles" subtitle="Réseaux et preuves reçues">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={stats.byPaymentOperator}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#9aa8bd", fontSize: 12 }} />
+              <YAxis tick={{ fill: "#9aa8bd", fontSize: 12 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: "#081b30", border: "1px solid rgba(255,255,255,.12)", color: "#fff" }} />
+              <Bar dataKey="total" fill="#38bdf8" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartPanel>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+        <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+          <SectionTitle icon={ShieldCheck} title="Indicateurs de contrôle" caption="Qualité des dossiers et travail restant." />
+          <div className="mt-5 grid gap-3">
+            <ProgressRow label="Preuves de paiement reçues" value={stats.proofRate} />
+            <ProgressRow label="Résultats déjà communiqués" value={stats.resultRate} />
+            <ProgressRow label="Dossiers encore à traiter" value={stats.pendingRate} />
+          </div>
+        </section>
+        <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
+          <div className="border-b border-white/10 p-4 sm:p-5">
+            <SectionTitle icon={Users} title="Candidatures récentes" caption="Vue de pilotage, sans exposer les mots de passe." />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-white/[0.04] text-kcs-muted">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Candidat</th>
+                  <th className="px-4 py-3 font-medium">Province</th>
+                  <th className="px-4 py-3 font-medium">Paiement</th>
+                  <th className="px-4 py-3 font-medium">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {metrics.slice(0, 8).map((row) => (
+                  <tr key={row.id} className="border-t border-white/10">
+                    <td className="px-4 py-3 font-medium">{`${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || "Candidat"}</td>
+                    <td className="px-4 py-3 text-kcs-muted">{row.province || "Non renseignée"}</td>
+                    <td className="px-4 py-3 text-kcs-muted">{row.payment_operator || "Non renseigné"}</td>
+                    <td className="px-4 py-3"><StatusBadge label={formatStatus(row.status)} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
@@ -453,6 +664,127 @@ function PaymentPanel({ reference }: { reference: string }) {
         </div>
       </div>
     </InfoPanel>
+  );
+}
+
+function buildAdminStats(rows: AdminMetric[]) {
+  const total = rows.length || 1;
+  const paid = rows.filter((row) => Boolean(row.transaction_id)).length;
+  const proofs = rows.filter((row) => Boolean(row.payment_proof_path)).length;
+  const approved = rows.filter((row) => ["approved", "eligible"].includes(row.status)).length;
+  const results = rows.filter((row) => Boolean(row.result_message)).length;
+  const pending = rows.filter((row) => ["submitted", "payment_pending", "payment_under_review", "documents_required", "under_review"].includes(row.status)).length;
+
+  return {
+    total: rows.length,
+    provinceCount: new Set(rows.map((row) => row.province).filter(Boolean)).size,
+    paymentRate: percentage(paid, total),
+    approvalRate: percentage(approved, total),
+    proofRate: percentage(proofs, total),
+    resultRate: percentage(results, total),
+    pendingRate: percentage(pending, total),
+    byProvince: groupRows(rows, (row) => row.province || "Non renseignée").slice(0, 12),
+    byStatus: groupRows(rows, (row) => formatStatus(row.status)),
+    byPaymentOperator: groupRows(rows, (row) => row.payment_operator || "Non renseigné"),
+    byDay: groupRows(rows, (row) => new Date(row.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })).reverse()
+  };
+}
+
+function groupRows(rows: AdminMetric[], getKey: (row: AdminMetric) => string) {
+  const groups = new Map<string, number>();
+
+  rows.forEach((row) => {
+    const key = getKey(row);
+    groups.set(key, (groups.get(key) ?? 0) + 1);
+  });
+
+  return Array.from(groups, ([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+}
+
+function percentage(value: number, total: number) {
+  return Math.round((value / Math.max(total, 1)) * 100);
+}
+
+function formatStatus(status: string) {
+  const labels: Record<string, string> = {
+    submitted: "Soumise",
+    payment_pending: "Paiement attendu",
+    payment_under_review: "Paiement en revue",
+    documents_required: "Documents requis",
+    under_review: "En revue",
+    eligible: "Éligible",
+    ineligible: "Non éligible",
+    approved: "Approuvée",
+    rejected: "Rejetée"
+  };
+
+  return labels[status] ?? status;
+}
+
+function ChartPanel({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <section className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <p className="mt-1 text-sm text-kcs-muted">{subtitle}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function LegendList({ rows }: { rows: { name: string; total: number }[] }) {
+  return (
+    <div className="mt-3 grid gap-2">
+      {rows.map((row, index) => (
+        <div key={row.name} className="flex items-center justify-between gap-3 text-sm">
+          <span className="flex min-w-0 items-center gap-2 text-kcs-muted">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: chartColors[index % chartColors.length] }} />
+            <span className="truncate">{row.name}</span>
+          </span>
+          <span className="font-semibold text-white">{row.total}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProgressRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+        <span className="text-kcs-muted">{label}</span>
+        <span className="font-semibold">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-kcs-gold" style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function getStudentProgress(status?: string) {
+  const progress: Record<string, number> = {
+    submitted: 20,
+    payment_pending: 30,
+    payment_under_review: 45,
+    documents_required: 55,
+    under_review: 70,
+    eligible: 85,
+    ineligible: 100,
+    approved: 100,
+    rejected: 100
+  };
+
+  return progress[status ?? ""] ?? 10;
+}
+
+function MiniInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-white/10 bg-[#061426] p-3">
+      <p className="text-xs font-medium uppercase text-kcs-muted">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-white">{value}</p>
+    </div>
   );
 }
 
