@@ -20,7 +20,7 @@ export function DateFilter() {
   return (
     <button className="flex h-12 items-center gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-sm text-kcs-text shadow-premium">
       <CalendarDays className="h-4 w-4 text-kcs-muted" />
-      July 2026
+      Juillet 2026
       <ChevronDown className="h-4 w-4 text-kcs-muted" />
     </button>
   );

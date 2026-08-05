@@ -28,49 +28,49 @@ import { cn } from "@/lib/utils";
 
 const groups = [
   {
-    label: "MAIN",
+    label: "PRINCIPAL",
     items: [
-      { label: "Dashboard", icon: Gauge, active: true },
-      { label: "Applications", icon: ClipboardCheck },
-      { label: "Payments", icon: Landmark },
+      { label: "Tableau de bord", icon: Gauge, active: true },
+      { label: "Candidatures", icon: ClipboardCheck },
+      { label: "Paiements", icon: Landmark },
       { label: "Documents", icon: FileCheck2 },
       { label: "Messages", icon: Mail }
     ]
   },
   {
-    label: "MANAGEMENT",
+    label: "GESTION",
     items: [
-      { label: "Students", icon: GraduationCap },
-      { label: "Guardians", icon: UsersRound },
-      { label: "Reviewers", icon: BookOpenCheck },
-      { label: "Administrators", icon: UserCog },
-      { label: "Roles & Permissions", icon: ShieldCheck }
+      { label: "Étudiants", icon: GraduationCap },
+      { label: "Responsables", icon: UsersRound },
+      { label: "Réviseurs", icon: BookOpenCheck },
+      { label: "Administrateurs", icon: UserCog },
+      { label: "Rôles et permissions", icon: ShieldCheck }
     ]
   },
   {
-    label: "PROGRAM",
+    label: "PROGRAMME",
     items: [
-      { label: "Campaigns", icon: BriefcaseBusiness },
-      { label: "Eligibility Rules", icon: ScrollText },
-      { label: "Selection", icon: Activity },
-      { label: "Results", icon: FileText },
-      { label: "Announcements", icon: Megaphone }
+      { label: "Campagnes", icon: BriefcaseBusiness },
+      { label: "Règles d'éligibilité", icon: ScrollText },
+      { label: "Sélection", icon: Activity },
+      { label: "Résultats", icon: FileText },
+      { label: "Annonces", icon: Megaphone }
     ]
   },
   {
-    label: "SYSTEM",
+    label: "SYSTÈME",
     items: [
-      { label: "Settings", icon: Settings },
-      { label: "Security", icon: LockKeyhole },
-      { label: "Audit Logs", icon: FileArchive },
-      { label: "Backup & Recovery", icon: ArchiveRestore }
+      { label: "Paramètres", icon: Settings },
+      { label: "Sécurité", icon: LockKeyhole },
+      { label: "Journaux d'audit", icon: FileArchive },
+      { label: "Sauvegarde et reprise", icon: ArchiveRestore }
     ]
   },
   {
-    label: "REPORTS",
+    label: "RAPPORTS",
     items: [
-      { label: "Analytics", icon: BarChart3 },
-      { label: "Reports", icon: Bell }
+      { label: "Analyses", icon: BarChart3 },
+      { label: "Rapports", icon: Bell }
     ]
   }
 ];
@@ -108,8 +108,8 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-full bg-kcs-cyan/15 text-sm font-bold text-kcs-cyan">KA</div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">KCS Admin</p>
-            <p className="truncate text-xs text-kcs-muted">Super Administrator</p>
+            <p className="truncate text-sm font-semibold">Admin KCS</p>
+            <p className="truncate text-xs text-kcs-muted">Super administrateur</p>
           </div>
         </div>
       </div>

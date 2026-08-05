@@ -32,7 +32,7 @@ export async function signInWithPassword(email: string, password: string): Promi
 
 async function supabaseFetch<T>(url: string, init: RequestInit): Promise<SupabaseResult<T>> {
   if (!isSupabaseConfigured) {
-    return { ok: false, error: "Supabase is not configured." };
+    return { ok: false, error: "Supabase n'est pas configuré." };
   }
 
   try {
@@ -50,13 +50,35 @@ async function supabaseFetch<T>(url: string, init: RequestInit): Promise<Supabas
     const data = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
-      return { ok: false, error: data?.message ?? data?.error_description ?? data?.hint ?? response.statusText };
+      return { ok: false, error: translateSupabaseError(data?.message ?? data?.error_description ?? data?.hint ?? response.statusText) };
     }
 
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Unexpected Supabase request failure." };
+    return { ok: false, error: error instanceof Error ? translateSupabaseError(error.message) : "La requête Supabase a échoué." };
   }
+}
+
+function translateSupabaseError(message: string) {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("email_not_confirmed")) {
+    return "L'adresse e-mail n'est pas encore confirmée.";
+  }
+
+  if (lowerMessage.includes("invalid login credentials")) {
+    return "Identifiants de connexion invalides.";
+  }
+
+  if (lowerMessage.includes("duplicate key")) {
+    return "Un dossier avec cette référence existe déjà.";
+  }
+
+  if (lowerMessage.includes("failed to fetch")) {
+    return "Impossible de joindre Supabase. Vérifiez la connexion Internet.";
+  }
+
+  return message;
 }
 
 function normalizeRestUrl(value: string) {

@@ -6,14 +6,14 @@ import { ApplicationsChart, ProvincePanel, PaymentDonut } from "@/components/das
 import { RecentApplications } from "@/components/dashboard/recent-applications";
 
 const stats = [
-  { label: "Total Applications", value: "24,589", meta: "12.5% from last month", icon: Users, tone: "text-white", trend: "up" },
-  { label: "Pending Review", value: "4,752", meta: "Waiting for verification", icon: Timer, tone: "text-kcs-gold", trend: "warn" },
-  { label: "Total Payments", value: "$1,248,750", meta: "18.3% from last month", icon: Landmark, tone: "text-kcs-gold", trend: "up" },
-  { label: "Eligible Applicants", value: "8,420", meta: "Ready for selection pool", icon: UserCheck, tone: "text-kcs-success", trend: "info" },
-  { label: "Selected Students", value: "125", meta: "This campaign finalists", icon: GraduationCap, tone: "text-kcs-cyan", trend: "info" },
-  { label: "Failed Payments", value: "318", meta: "Needs finance follow-up", icon: FileWarning, tone: "text-kcs-danger", trend: "warn" },
-  { label: "Documents Awaiting Verification", value: "1,904", meta: "Assigned review queue", icon: ClipboardList, tone: "text-kcs-goldLight", trend: "warn" },
-  { label: "Applications Requiring Correction", value: "642", meta: "Applicant action needed", icon: Award, tone: "text-kcs-warning", trend: "warn" }
+  { label: "Total des candidatures", value: "24,589", meta: "12.5% depuis le mois dernier", icon: Users, tone: "text-white", trend: "up" },
+  { label: "En attente de revue", value: "4,752", meta: "En attente de vérification", icon: Timer, tone: "text-kcs-gold", trend: "warn" },
+  { label: "Total des paiements", value: "$1,248,750", meta: "18.3% depuis le mois dernier", icon: Landmark, tone: "text-kcs-gold", trend: "up" },
+  { label: "Candidats éligibles", value: "8,420", meta: "Prêts pour le bassin de sélection", icon: UserCheck, tone: "text-kcs-success", trend: "info" },
+  { label: "Étudiants sélectionnés", value: "125", meta: "Finalistes de cette campagne", icon: GraduationCap, tone: "text-kcs-cyan", trend: "info" },
+  { label: "Paiements échoués", value: "318", meta: "Suivi finance requis", icon: FileWarning, tone: "text-kcs-danger", trend: "warn" },
+  { label: "Documents en attente", value: "1,904", meta: "File de revue assignée", icon: ClipboardList, tone: "text-kcs-goldLight", trend: "warn" },
+  { label: "Candidatures à corriger", value: "642", meta: "Action requise du candidat", icon: Award, tone: "text-kcs-warning", trend: "warn" }
 ] as const;
 
 export function AdminDashboard() {
@@ -26,8 +26,8 @@ export function AdminDashboard() {
           <section className="px-4 pb-8 pt-6 sm:px-8">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <h1 className="text-2xl font-bold sm:text-3xl">Dashboard</h1>
-                <p className="mt-1 text-sm text-kcs-muted">Welcome back, KCS Administration Team</p>
+                <h1 className="text-2xl font-bold sm:text-3xl">Tableau de bord</h1>
+                <p className="mt-1 text-sm text-kcs-muted">Bienvenue, équipe administrative KCS</p>
               </div>
               <DateFilter />
             </div>

@@ -18,18 +18,18 @@ const mimeTypes = {
 };
 
 if (!existsSync(root)) {
-  console.error("Missing out/ directory. Run npm run build first.");
+  console.error("Le dossier out/ est introuvable. Lancez d'abord npm run build.");
   process.exit(1);
 }
 
-createServer((request, response) => {
+const server = createServer((request, response) => {
   const requestedPath = new URL(request.url ?? "/", `http://localhost:${port}`).pathname;
   const cleanPath = normalize(decodeURIComponent(requestedPath)).replace(/^(\.\.[/\\])+/, "");
   let filePath = resolve(join(root, cleanPath === "/" ? "index.html" : cleanPath));
 
   if (!filePath.startsWith(root)) {
     response.writeHead(403);
-    response.end("Forbidden");
+    response.end("Accès interdit");
     return;
   }
 
@@ -43,6 +43,18 @@ createServer((request, response) => {
 
   response.setHeader("Content-Type", mimeTypes[extname(filePath)] ?? "application/octet-stream");
   createReadStream(filePath).pipe(response);
-}).listen(port, () => {
-  console.log(`KCS static preview: http://localhost:${port}`);
+});
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.log(`Le site local semble déjà lancé : http://localhost:${port}`);
+    process.exit(0);
+  }
+
+  console.error(error);
+  process.exit(1);
+});
+
+server.listen(port, () => {
+  console.log(`Aperçu local KCS : http://localhost:${port}`);
 });

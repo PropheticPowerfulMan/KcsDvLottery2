@@ -17,25 +17,25 @@ import {
   Users,
   type LucideIcon
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { KcsBrand } from "@/components/branding/kcs-brand";
 import { insertApplication, isSupabaseConfigured, signInWithPassword } from "@/lib/supabase-rest";
 
 const paymentReferencePrefix = "KCS-2026";
 
 const eligibilityRules = [
-  "Applicant must be a KCS graduate or approved partner-school candidate.",
-  "Applicant must have a valid identity document and accurate civil information.",
-  "Applicant must provide education history, guardian contacts, and reachable phone numbers.",
-  "Application fees are reviewed only after payment evidence is matched by finance.",
-  "Final eligibility is confirmed by the administration after document review."
+  "Le candidat doit être un ancien élève de KCS ou être approuvé par une école partenaire.",
+  "Le candidat doit présenter une pièce d'identité valide et des informations civiles exactes.",
+  "Le candidat doit fournir son parcours scolaire, les contacts du responsable et un numéro joignable.",
+  "Les frais de dossier sont validés uniquement après rapprochement de la preuve de paiement par la finance.",
+  "L'éligibilité finale est confirmée par l'administration après vérification des documents."
 ];
 
 const paymentMethods = [
-  { name: "M-Pesa", status: "Ready to connect", detail: "Merchant credentials and signed webhook are required before live collection." },
-  { name: "Airtel Money", status: "Ready to connect", detail: "Use the official merchant API or a certified aggregator." },
-  { name: "Orange Money", status: "Ready to connect", detail: "Requires merchant account, callback secret, and reconciliation exports." },
-  { name: "Manual verification", status: "Available", detail: "Transaction reference, proof upload, finance review, and audit trail." }
+  { name: "M-Pesa", status: "Prêt à connecter", detail: "Les identifiants marchands et un webhook signé sont requis avant l'encaissement réel." },
+  { name: "Airtel Money", status: "Prêt à connecter", detail: "Utiliser l'API marchande officielle ou un agrégateur certifié." },
+  { name: "Orange Money", status: "Prêt à connecter", detail: "Nécessite un compte marchand, un secret de rappel et des exports de rapprochement." },
+  { name: "Vérification manuelle", status: "Disponible", detail: "Référence de transaction, preuve de paiement, revue finance et journal d'audit." }
 ];
 
 type View = "register" | "login" | "student" | "admin";
@@ -50,10 +50,10 @@ export default function Home() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <KcsBrand />
           <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
-            <NavButton label="Apply" active={view === "register"} onClick={() => setView("register")} />
-            <NavButton label="Login" active={view === "login"} onClick={() => setView("login")} />
-            <NavButton label="Student" active={view === "student"} onClick={() => setView("student")} />
-            <NavButton label="Admin" active={view === "admin"} onClick={() => setView("admin")} />
+            <NavButton label="Postuler" active={view === "register"} onClick={() => setView("register")} />
+            <NavButton label="Connexion" active={view === "login"} onClick={() => setView("login")} />
+            <NavButton label="Étudiant" active={view === "student"} onClick={() => setView("student")} />
+            <NavButton label="Administration" active={view === "admin"} onClick={() => setView("admin")} />
           </nav>
         </div>
       </header>
@@ -61,31 +61,31 @@ export default function Home() {
       <section className="border-b border-white/10 bg-[#061426]">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 md:py-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(360px,0.58fr)] lg:px-8">
           <div className="min-w-0 pt-2">
-            <p className="text-sm font-semibold text-kcs-goldLight">Official Opportunity Program</p>
+            <p className="text-sm font-semibold text-kcs-goldLight">Programme officiel d'opportunité</p>
             <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-normal text-white sm:text-4xl lg:text-5xl">
-              Submit and track a real applicant file.
+              Soumettre et suivre un dossier de candidature réel.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-kcs-muted">
-              Applicants can create a file, submit identity and education information, attach payment evidence, and wait for a controlled administrative review.
+              Les candidats peuvent créer un dossier, renseigner leur identité et leur parcours scolaire, joindre une preuve de paiement et attendre une revue administrative contrôlée.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <Metric label="Database" value={isSupabaseConfigured ? "Connected" : "Not configured"} />
-              <Metric label="Reference format" value={`${paymentReferencePrefix}-#####`} />
-              <Metric label="Access mode" value="Production" />
+              <Metric label="Base de données" value={isSupabaseConfigured ? "Connectée" : "Non configurée"} />
+              <Metric label="Format référence" value={`${paymentReferencePrefix}-#####`} />
+              <Metric label="Mode d'accès" value="Production" />
             </div>
           </div>
 
           <div className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
             <div className="mb-4 grid grid-cols-2 gap-2">
-              <ActionButton active={view === "register"} label="Create file" icon={UserPlus} onClick={() => setView("register")} />
-              <ActionButton active={view === "login"} label="Secure login" icon={LockKeyhole} onClick={() => setView("login")} />
+              <ActionButton active={view === "register"} label="Créer un dossier" icon={UserPlus} onClick={() => setView("register")} />
+              <ActionButton active={view === "login"} label="Connexion sécurisée" icon={LockKeyhole} onClick={() => setView("login")} />
             </div>
             <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <h2 className="text-base font-semibold">System status</h2>
+              <h2 className="text-base font-semibold">État du système</h2>
               <div className="mt-4 grid gap-3">
-                <StatusRow label="Supabase REST" value={isSupabaseConfigured ? "Configured" : "Missing environment variables"} />
-                <StatusRow label="Applicant intake" value="Live form" />
-                <StatusRow label="Administration" value="Protected review workflow" />
+                <StatusRow label="Supabase REST" value={isSupabaseConfigured ? "Configuré" : "Variables manquantes"} />
+                <StatusRow label="Dépôt des candidatures" value="Formulaire actif" />
+                <StatusRow label="Administration" value="Traitement protégé" />
               </div>
             </div>
           </div>
@@ -105,12 +105,16 @@ export default function Home() {
 function RegistrationPanel() {
   const [notice, setNotice] = useState<Notice>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const reference = useMemo(() => `${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`, []);
+  const [reference, setReference] = useState(`${paymentReferencePrefix}-00000`);
+
+  useEffect(() => {
+    setReference(`${paymentReferencePrefix}-${Math.floor(10000 + Math.random() * 90000)}`);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
-    setNotice({ tone: "info", text: "Submitting applicant file..." });
+    setNotice({ tone: "info", text: "Envoi du dossier en cours..." });
 
     const formData = new FormData(event.currentTarget);
     const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
@@ -119,43 +123,43 @@ function RegistrationPanel() {
     setIsSubmitting(false);
     setNotice(
       result.ok
-        ? { tone: "success", text: `Application submitted. Reference: ${reference}` }
-        : { tone: "error", text: `Supabase rejected the submission: ${result.error}` }
+        ? { tone: "success", text: `Candidature envoyée. Référence : ${reference}` }
+        : { tone: "error", text: `Supabase a refusé l'envoi : ${result.error}` }
     );
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       <form onSubmit={handleSubmit} className="min-w-0 rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-        <SectionTitle icon={UserPlus} title="New applicant registration" caption="Use legal names exactly as they appear on official documents." />
+        <SectionTitle icon={UserPlus} title="Nouvelle candidature" caption="Utiliser les noms légaux exactement comme ils apparaissent sur les documents officiels." />
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <Field name="first_name" label="First name" placeholder="Grace" required />
-          <Field name="last_name" label="Last name" placeholder="Mbuyi" required />
-          <Field name="date_of_birth" label="Date of birth" type="date" required />
-          <Field name="country_of_birth" label="Country of birth" placeholder="DR Congo" required />
-          <Field name="email" label="Email address" type="email" placeholder="candidate@example.com" required />
-          <Field name="phone" label="Phone number" placeholder="+243..." required />
-          <Field name="education_level" label="Education level" placeholder="High school diploma" required />
-          <Field name="identity_number" label="Passport or ID number" placeholder="ID reference" required />
-          <Field name="guardian_name" label="Guardian full name" placeholder="Parent or guardian" />
-          <Field name="guardian_phone" label="Guardian phone" placeholder="+243..." />
+          <Field name="first_name" label="Prénom" placeholder="Grace" required />
+          <Field name="last_name" label="Nom" placeholder="Mbuyi" required />
+          <Field name="date_of_birth" label="Date de naissance" type="date" required />
+          <Field name="country_of_birth" label="Pays de naissance" placeholder="RD Congo" required />
+          <Field name="email" label="Adresse e-mail" type="email" placeholder="candidat@example.com" required />
+          <Field name="phone" label="Numéro de téléphone" placeholder="+243..." required />
+          <Field name="education_level" label="Niveau d'études" placeholder="Diplôme d'État" required />
+          <Field name="identity_number" label="Numéro passeport ou carte d'identité" placeholder="Référence du document" required />
+          <Field name="guardian_name" label="Nom complet du responsable" placeholder="Parent ou responsable" />
+          <Field name="guardian_phone" label="Téléphone du responsable" placeholder="+243..." />
           <label className="min-w-0 sm:col-span-2">
-            <span className="mb-2 block text-sm font-medium">Residential address</span>
-            <textarea name="residential_address" required className="min-h-[96px] w-full rounded-md border border-white/10 bg-[#061426] px-3 py-2 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="City, commune, avenue, number" />
+            <span className="mb-2 block text-sm font-medium">Adresse de résidence</span>
+            <textarea name="residential_address" required className="min-h-[96px] w-full rounded-md border border-white/10 bg-[#061426] px-3 py-2 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20" placeholder="Ville, commune, avenue, numéro" />
           </label>
         </div>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-kcs-muted">Generated payment reference: {reference}</p>
+          <p className="text-sm leading-6 text-kcs-muted">Référence de paiement générée : {reference}</p>
           <button disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-gold px-5 text-sm font-bold text-[#08111f] disabled:cursor-not-allowed disabled:opacity-60">
-            {isSubmitting ? "Submitting..." : "Submit application"}
+            {isSubmitting ? "Envoi..." : "Soumettre la candidature"}
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </form>
 
       <aside className="grid min-w-0 gap-4 content-start">
-        <InfoPanel title="Eligibility" icon={BadgeCheck}>
+        <InfoPanel title="Éligibilité" icon={BadgeCheck}>
           <div className="grid gap-3">
             {eligibilityRules.map((rule) => (
               <ChecklistItem key={rule}>{rule}</ChecklistItem>
@@ -175,7 +179,7 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
-    setNotice({ tone: "info", text: "Checking Supabase Auth..." });
+    setNotice({ tone: "info", text: "Vérification auprès de Supabase Auth..." });
 
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "");
@@ -183,31 +187,31 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
     const result = await signInWithPassword(email, password);
 
     setIsSubmitting(false);
-    setNotice(result.ok ? { tone: "success", text: "Login accepted by Supabase Auth." } : { tone: "error", text: `Login failed: ${result.error}` });
+    setNotice(result.ok ? { tone: "success", text: "Connexion acceptée par Supabase Auth." } : { tone: "error", text: `Connexion refusée : ${result.error}` });
   }
 
   return (
     <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.75fr)]">
       <form onSubmit={handleSubmit} className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-        <SectionTitle icon={LockKeyhole} title="Secure login" caption="Use the real account created in Supabase Auth." />
+        <SectionTitle icon={LockKeyhole} title="Connexion sécurisée" caption="Utiliser le compte réel créé dans Supabase Auth." />
         {notice ? <NoticeBox notice={notice} /> : null}
         <div className="mt-6 grid gap-4">
-          <Field name="email" label="Email address" placeholder="candidate@example.com" type="email" required />
-          <Field name="password" label="Password" placeholder="Password" type="password" required />
+          <Field name="email" label="Adresse e-mail" placeholder="candidat@example.com" type="email" required />
+          <Field name="password" label="Mot de passe" placeholder="Mot de passe" type="password" required />
           <button disabled={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-kcs-success px-4 text-sm font-semibold text-[#061426] disabled:cursor-not-allowed disabled:opacity-60">
             <LockKeyhole className="h-4 w-4" />
-            {isSubmitting ? "Signing in..." : "Login securely"}
+            {isSubmitting ? "Connexion..." : "Se connecter"}
           </button>
         </div>
       </form>
       <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-        <h3 className="font-semibold">Protected workspaces</h3>
+        <h3 className="font-semibold">Espaces protégés</h3>
         <div className="mt-4 grid gap-3">
           <button onClick={onStudent} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
-            Student dashboard <ChevronRight className="h-4 w-4" />
+            Espace étudiant <ChevronRight className="h-4 w-4" />
           </button>
           <button onClick={onAdmin} className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-white/10 bg-[#061426] px-4 text-left text-sm font-semibold hover:bg-white/[0.06]">
-            Admin dashboard <ChevronRight className="h-4 w-4" />
+            Espace administration <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </section>
@@ -218,18 +222,18 @@ function LoginPanel({ onStudent, onAdmin }: { onStudent: () => void; onAdmin: ()
 function StudentDashboard() {
   return (
     <div className="grid gap-6">
-      <DashboardHeader title="Student dashboard" subtitle="Applicant workspace" tone="Awaiting verified account data" />
+      <DashboardHeader title="Espace étudiant" subtitle="Suivi du dossier candidat" tone="En attente des données vérifiées" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={ClipboardCheck} label="Application" value="Pending sync" />
-        <Stat icon={CreditCard} label="Payment" value="Unverified" />
-        <Stat icon={FileCheck2} label="Documents" value="Required" />
-        <Stat icon={BadgeCheck} label="Eligibility" value="Under review" />
+        <Stat icon={ClipboardCheck} label="Candidature" value="Synchronisation requise" />
+        <Stat icon={CreditCard} label="Paiement" value="Non vérifié" />
+        <Stat icon={FileCheck2} label="Documents" value="Requis" />
+        <Stat icon={BadgeCheck} label="Éligibilité" value="En revue" />
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-6">
-          <h3 className="font-semibold">Application timeline</h3>
+          <h3 className="font-semibold">Étapes du dossier</h3>
           <div className="mt-4 grid gap-3">
-            {["Account created in Supabase Auth", "Registration form submitted", "Payment proof uploaded", "Finance review completed"].map((item) => (
+            {["Compte créé dans Supabase Auth", "Formulaire de candidature envoyé", "Preuve de paiement ajoutée", "Revue finance terminée"].map((item) => (
               <ChecklistItem key={item}>{item}</ChecklistItem>
             ))}
           </div>
@@ -243,19 +247,19 @@ function StudentDashboard() {
 function AdminDashboard() {
   return (
     <div className="grid gap-6">
-      <DashboardHeader title="Administration dashboard" subtitle="KCS review console" tone="Supabase-backed workflow" />
+      <DashboardHeader title="Espace administration" subtitle="Console de revue KCS" tone="Traitement connecté à Supabase" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={Users} label="Applications" value="Live data required" />
-        <Stat icon={Landmark} label="Verified payments" value="Finance queue" />
-        <Stat icon={ShieldCheck} label="Security" value="RLS required" />
-        <Stat icon={GraduationCap} label="Eligible pool" value="Review only" />
+        <Stat icon={Users} label="Candidatures" value="Données réelles requises" />
+        <Stat icon={Landmark} label="Paiements vérifiés" value="File finance" />
+        <Stat icon={ShieldCheck} label="Sécurité" value="RLS requis" />
+        <Stat icon={GraduationCap} label="Candidats éligibles" value="Revue uniquement" />
       </div>
       <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
         <div className="border-b border-white/10 p-4 sm:p-5">
-          <SectionTitle icon={Users} title="Applicant queue" caption="Connect this panel to a protected server-side Supabase query before exposing private records." />
+          <SectionTitle icon={Users} title="File des candidatures" caption="Connecter ce panneau à une requête Supabase serveur protégée avant d'exposer les dossiers privés." />
         </div>
         <div className="p-4 text-sm leading-6 text-kcs-muted sm:p-5">
-          Administrative data should be loaded through server-side policies, role checks, and private RLS rules. The public publishable key must never receive broad access to private applicant records.
+          Les données administratives doivent être chargées avec des politiques côté serveur, des contrôles de rôle et des règles RLS privées. La clé publique ne doit jamais recevoir un accès large aux dossiers privés des candidats.
         </div>
       </section>
     </div>
@@ -264,7 +268,7 @@ function AdminDashboard() {
 
 function PaymentPanel({ reference }: { reference: string }) {
   return (
-    <InfoPanel title="Payment verification" icon={CreditCard}>
+    <InfoPanel title="Vérification du paiement" icon={CreditCard}>
       <div className="grid gap-3">
         {paymentMethods.map((method) => (
           <div key={method.name} className="min-w-0 rounded-md border border-white/10 bg-[#061426] p-3">
@@ -279,13 +283,13 @@ function PaymentPanel({ reference }: { reference: string }) {
       <div className="mt-4 rounded-md border border-kcs-gold/30 bg-kcs-gold/10 p-3">
         <div className="flex min-w-0 items-center gap-2">
           <ReceiptText className="h-5 w-5 shrink-0 text-kcs-goldLight" />
-          <p className="min-w-0 break-words font-semibold">Manual reference: {reference}</p>
+          <p className="min-w-0 break-words font-semibold">Référence manuelle : {reference}</p>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field name="transaction_id" label="Transaction ID" placeholder="Operator reference" />
+          <Field name="transaction_id" label="ID de transaction" placeholder="Référence de l'opérateur" />
           <button className="flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-[#061426] px-3 text-sm font-semibold hover:bg-white/[0.06]" type="button">
             <Upload className="h-4 w-4" />
-            Upload proof
+            Ajouter une preuve
           </button>
         </div>
       </div>

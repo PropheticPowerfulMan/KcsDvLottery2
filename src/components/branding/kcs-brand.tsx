@@ -9,7 +9,7 @@ export function KcsBrand({ compact = false, tone = "dark" }: { compact?: boolean
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-[#d0d7de] bg-white shadow-sm sm:h-14 sm:w-14">
         <img
           src={`${assetBasePath}/branding/kcs-logo-placeholder.png`}
-          alt="Kinshasa Christian School logo"
+          alt="Logo de Kinshasa Christian School"
           width="56"
           height="56"
           className="h-full w-full object-cover"
@@ -18,7 +18,7 @@ export function KcsBrand({ compact = false, tone = "dark" }: { compact?: boolean
       {!compact && (
         <div className="min-w-0">
           <p className={`text-lg font-extrabold tracking-normal ${titleColor}`}>KCS</p>
-          <p className={`text-[11px] font-medium uppercase tracking-[0.12em] ${captionColor}`}>Opportunity Program</p>
+          <p className={`text-[11px] font-medium uppercase tracking-[0.12em] ${captionColor}`}>Programme d'opportunité</p>
         </div>
       )}
     </div>

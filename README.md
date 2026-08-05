@@ -1,55 +1,68 @@
-# KCS Opportunity Program
+# Programme d'opportunité KCS
 
-Private academic opportunity platform for Kinshasa Christian School graduates.
+Plateforme privée d'opportunité académique pour les anciens élèves de Kinshasa Christian School.
 
-Legal notice: This is a private academic opportunity program organized by Kinshasa Christian School. It is not affiliated with the U.S. Government, the U.S. Department of State, the U.S. Embassy, USCIS, or the official Diversity Visa Program.
+Avis légal : ce programme privé est organisé par Kinshasa Christian School. Il n'est pas affilié au gouvernement des États-Unis, au Département d'État américain, à l'ambassade des États-Unis, à l'USCIS ou au programme officiel Diversity Visa.
 
-## Current Status
+## Lancement local
 
-Phase 1 and the first Phase 2 foundation are started. This workspace originally contained only `public/kcs-icon-512.png` and the ORBYX-style dashboard reference image. The app now includes a Next.js/Tailwind dashboard foundation that reproduces the reference design language with KCS branding.
-
-## Stack
-
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- Lucide React icons
-- Recharts
-- Planned: Supabase Auth, PostgreSQL, Storage, RLS, Edge Functions
-
-## Local Development
+Commande recommandée pour tester l'application comme elle sera livrée :
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open `http://localhost:4173`. The default local command builds the static export, verifies that CSS is present, and serves `out/` over HTTP.
+Ouvrir ensuite :
 
-For framework hot reload only, use `npm run dev:next` and open `http://localhost:3000`. For delivery testing, prefer `npm run dev`.
+```text
+http://localhost:4173
+```
 
-## Logo Replacement
+Cette commande construit l'application, vérifie que le CSS est présent, puis sert le dossier `out/` en local. Si le port `4173` est déjà utilisé, le serveur indique simplement que le site est déjà lancé.
 
-The current logo lives at `public/branding/kcs-logo-placeholder.png` and is copied from the supplied `public/kcs-icon-512.png` asset. Replace that file with the official production KCS logo using the same filename to avoid layout changes.
+Autre méthode Windows :
 
-## Environment
+```bash
+start-local.cmd
+```
 
-Copy `.env.example` to `.env.local` and fill in the required values. Never commit real credentials.
+## Développement Next.js
 
-## Implementation Plan
+Pour travailler avec le rechargement à chaud du framework :
 
-1. Foundation: finish shared layout, public pages, responsive applicant shell, and design system components.
-2. Supabase: add schema migrations, typed clients, auth, RBAC, and RLS.
-3. Applicant workflow: multi-step form, document upload, draft saving, review, and declaration.
-4. Payments: provider abstraction, sandbox provider, webhook verification, receipts, and finance reconciliation.
-5. Notifications: email/SMS adapters, templates, retries, and delivery logs.
-6. Administration: review queues, user management, audit logs, reports, and exports.
-7. Selection: eligibility freeze, candidate hash, secure server-side draw, two-person approval, and publication.
-8. Quality: unit, integration, RLS, payment, selection, and Playwright tests.
+```bash
+npm run dev:next
+```
 
-## Security Notes
+Ouvrir ensuite :
 
-- Payment success must come from verified server-side webhooks or authorized finance reconciliation.
-- Selection must never use browser-side random logic.
-- Private documents must use Supabase private buckets and signed URLs.
-- Applicant and admin permissions must be enforced on the server and in database policies.
+```text
+http://localhost:3000
+```
+
+Pour les tests de livraison, utiliser toujours `npm run dev`.
+
+## Environnement
+
+Copier `.env.example` vers `.env.local`, puis renseigner les valeurs Supabase. Ne jamais publier les clés privées.
+
+## Supabase
+
+Exécuter d'abord :
+
+```text
+supabase/setup.sql
+```
+
+Pour confirmer les comptes de test créés dans Supabase Auth :
+
+```text
+supabase/confirm-test-users.sql
+```
+
+## Sécurité
+
+- Les paiements doivent être validés par webhook serveur ou par revue finance autorisée.
+- La sélection ne doit jamais être exécutée avec une logique aléatoire côté navigateur.
+- Les documents privés doivent rester dans des buckets privés avec liens signés.
+- Les droits étudiant et administrateur doivent être appliqués par le serveur et les règles RLS.

@@ -4,21 +4,21 @@ import { ChevronDown } from "lucide-react";
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const appData = [
-  { month: "Jan", value: 1300 },
-  { month: "Feb", value: 2200 },
-  { month: "Mar", value: 3700 },
-  { month: "Apr", value: 4500 },
-  { month: "May", value: 5050 },
-  { month: "Jun", value: 6200 },
-  { month: "Jul", value: 7200 }
+  { month: "Janv.", value: 1300 },
+  { month: "Févr.", value: 2200 },
+  { month: "Mars", value: 3700 },
+  { month: "Avr.", value: 4500 },
+  { month: "Mai", value: 5050 },
+  { month: "Juin", value: 6200 },
+  { month: "Juil.", value: 7200 }
 ];
 
 const paymentData = [
   { name: "M-Pesa", value: 542300, percent: "43.4%", color: "#F5B82E" },
   { name: "Airtel Money", value: 256120, percent: "20.5%", color: "#2D9CDB" },
   { name: "Orange Money", value: 198450, percent: "15.9%", color: "#E5574F" },
-  { name: "Bank Transfer", value: 201880, percent: "16.2%", color: "#32C76A" },
-  { name: "Other", value: 49000, percent: "3.9%", color: "#8A96A6" }
+  { name: "Virement bancaire", value: 201880, percent: "16.2%", color: "#32C76A" },
+  { name: "Autres", value: 49000, percent: "3.9%", color: "#8A96A6" }
 ];
 
 const provinces = [
@@ -26,14 +26,14 @@ const provinces = [
   ["Haut-Katanga", "3,456", "bg-kcs-gold"],
   ["Lualaba", "2,987", "bg-kcs-gold2"],
   ["Nord-Kivu", "2,450", "bg-[#C8A85C]"],
-  ["South-Kivu", "2,230", "bg-[#E8B93F]"],
-  ["Other", "7,221", "bg-[#6C7887]"]
+  ["Sud-Kivu", "2,230", "bg-[#E8B93F]"],
+  ["Autres", "7,221", "bg-[#6C7887]"]
 ];
 
 export function ApplicationsChart() {
   return (
     <section className="premium-panel rounded-xl p-5">
-      <PanelHeader title="Applications Overview" action="This Year" />
+      <PanelHeader title="Vue d'ensemble des candidatures" action="Cette année" />
       <div className="mt-4 h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={appData} margin={{ left: -18, right: 8, top: 8, bottom: 0 }}>
@@ -57,14 +57,14 @@ export function ApplicationsChart() {
 export function ProvincePanel() {
   return (
     <section className="premium-panel rounded-xl p-5">
-      <PanelHeader title="Applications by Province" />
+      <PanelHeader title="Candidatures par province" />
       <div className="mt-4 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="relative min-h-[230px] overflow-hidden rounded-lg border border-white/5 bg-[#07182B]">
           <div className="absolute inset-7 rounded-[45%_40%_46%_44%] border border-kcs-gold/35 bg-gradient-to-br from-kcs-gold/60 via-kcs-gold2/25 to-transparent shadow-glow" />
           <div className="absolute left-[18%] top-[19%] h-20 w-20 rounded-[42%] border border-kcs-gold/40 bg-black/20" />
           <div className="absolute bottom-[14%] right-[21%] h-28 w-24 rounded-[44%] border border-kcs-gold/40 bg-kcs-gold/35" />
           <div className="absolute right-[15%] top-[10%] h-24 w-24 rounded-[48%] bg-kcs-goldLight/70 blur-[1px]" />
-          <p className="absolute bottom-4 left-5 text-xs font-medium text-kcs-muted">DRC provincial distribution</p>
+          <p className="absolute bottom-4 left-5 text-xs font-medium text-kcs-muted">Répartition provinciale en RDC</p>
         </div>
         <div className="space-y-4 self-center">
           {provinces.map(([name, value, color]) => (
@@ -85,7 +85,7 @@ export function ProvincePanel() {
 export function PaymentDonut() {
   return (
     <section className="premium-panel rounded-xl p-5">
-      <PanelHeader title="Payment Summary" />
+      <PanelHeader title="Résumé des paiements" />
       <div className="mt-5 grid gap-5 md:grid-cols-[240px_1fr]">
         <div className="relative h-[240px]">
           <ResponsiveContainer width="100%" height="100%">

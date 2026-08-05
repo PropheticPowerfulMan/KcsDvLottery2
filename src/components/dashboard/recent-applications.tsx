@@ -1,9 +1,9 @@
 const rows = [
-  { name: "Grace M.", email: "grace.muteba@example.com", status: "Pending", date: "Jul 26, 2026", tone: "gold" },
-  { name: "Peter K.", email: "peter.kabeya@example.com", status: "Under Review", date: "Jul 26, 2026", tone: "cyan" },
-  { name: "Amina T.", email: "amina.tshibola@example.com", status: "Verified", date: "Jul 25, 2026", tone: "green" },
-  { name: "David L.", email: "david.lubaki@example.com", status: "Correction", date: "Jul 25, 2026", tone: "red" },
-  { name: "John S.", email: "john.samba@example.com", status: "Eligible", date: "Jul 24, 2026", tone: "green" }
+  { name: "Grace M.", email: "grace.muteba@example.com", status: "En attente", date: "26 juil. 2026", tone: "gold" },
+  { name: "Peter K.", email: "peter.kabeya@example.com", status: "En revue", date: "26 juil. 2026", tone: "cyan" },
+  { name: "Amina T.", email: "amina.tshibola@example.com", status: "Vérifié", date: "25 juil. 2026", tone: "green" },
+  { name: "David L.", email: "david.lubaki@example.com", status: "Correction", date: "25 juil. 2026", tone: "red" },
+  { name: "John S.", email: "john.samba@example.com", status: "Éligible", date: "24 juil. 2026", tone: "green" }
 ];
 
 const tones: Record<string, string> = {
@@ -16,7 +16,7 @@ const tones: Record<string, string> = {
 export function RecentApplications() {
   return (
     <section className="premium-panel rounded-xl p-5">
-      <h2 className="text-lg font-bold">Recent Applications</h2>
+      <h2 className="text-lg font-bold">Candidatures récentes</h2>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[620px] border-collapse text-sm">
           <tbody>
@@ -40,7 +40,7 @@ export function RecentApplications() {
           </tbody>
         </table>
       </div>
-      <button className="mx-auto mt-4 block text-sm font-semibold text-kcs-gold">View all</button>
+      <button className="mx-auto mt-4 block text-sm font-semibold text-kcs-gold">Tout voir</button>
     </section>
   );
 }
