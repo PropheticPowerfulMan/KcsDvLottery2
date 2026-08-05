@@ -109,7 +109,7 @@ type DialogState = { tone: "success" | "error" | "info"; title: string; message:
 type StudentSession = { accessToken: string; email: string } | null;
 type AdminSession = { accessToken: string; email: string } | null;
 type LoginTarget = "student" | "admin";
-type AdminTab = "resume" | "recherche" | "graphiques" | "candidatures" | "controle";
+type AdminTab = "resume" | "graphiques" | "candidatures" | "controle";
 type AdminMetric = {
   id: string;
   first_name?: string;
@@ -646,7 +646,7 @@ function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
       return;
     }
 
-    setNotice({ tone: "success", text: `Candidature ${label}.` });
+    setNotice({ tone: "success", text: `Candidature ${label}. Le message est visible dans le compte candidat et l'e-mail de résultat est ajouté à la file d'envoi Supabase.` });
     setSelectedApplication(null);
     await refreshMetrics();
   }
@@ -705,34 +705,6 @@ function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
             </div>
           </section>
         </>
-      ) : null}
-      {activeTab === "recherche" ? (
-        <section className="rounded-lg border border-white/10 bg-[#081b30] p-4 shadow-premium sm:p-5">
-        <SectionTitle icon={ClipboardCheck} title="Recherche minutieuse" caption="Filtrer les candidatures et recalculer automatiquement tous les indicateurs." />
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="min-w-0 xl:col-span-2">
-            <span className="mb-2 block text-sm font-medium">Recherche globale</span>
-            <input
-              value={filters.query}
-              onChange={(event) => setFilters((value) => ({ ...value, query: event.target.value }))}
-              placeholder="Nom, e-mail, téléphone, référence, ID transaction..."
-              className="h-10 w-full rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
-            />
-          </label>
-          <FilterSelect label="Province" value={filters.province} options={provinceOptions} onChange={(province) => setFilters((value) => ({ ...value, province }))} />
-          <FilterSelect label="Paiement" value={filters.payment} options={paymentOptions} onChange={(payment) => setFilters((value) => ({ ...value, payment }))} />
-          <FilterSelect label="Statut" value={filters.status} options={statusOptions} formatter={formatStatus} onChange={(status) => setFilters((value) => ({ ...value, status }))} />
-          <FilterSelect label="Preuve" value={filters.proof} options={["avec_preuve", "sans_preuve"]} formatter={(value) => value === "avec_preuve" ? "Avec preuve" : "Sans preuve"} onChange={(proof) => setFilters((value) => ({ ...value, proof }))} />
-          <FilterSelect label="Décision" value={filters.decision} options={["decide", "non_decide"]} formatter={(value) => value === "decide" ? "Résultat communiqué" : "Sans résultat"} onChange={(decision) => setFilters((value) => ({ ...value, decision }))} />
-          <FilterSelect label="Tri" value={filters.sort} options={["recent", "ancien", "province", "statut"]} formatter={(value) => ({ recent: "Plus récents", ancien: "Plus anciens", province: "Province", statut: "Statut" }[value] ?? value)} onChange={(sort) => setFilters((value) => ({ ...value, sort }))} allowEmpty={false} />
-        </div>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-kcs-muted">{filteredMetrics.length} candidature(s) trouvée(s) sur {metrics.length}.</p>
-          <button type="button" onClick={() => setFilters({ query: "", province: "", payment: "", status: "", proof: "", decision: "", sort: "recent" })} className="h-10 rounded-md border border-white/10 px-4 text-sm font-semibold text-kcs-muted hover:bg-white/[0.06] hover:text-white">
-            Réinitialiser
-          </button>
-        </div>
-      </section>
       ) : null}
       {activeTab === "graphiques" ? (
         <>
@@ -816,7 +788,30 @@ function AdminDashboard({ session }: { session: NonNullable<AdminSession> }) {
       {activeTab === "candidatures" ? (
         <section className="overflow-hidden rounded-lg border border-white/10 bg-[#081b30] shadow-premium">
           <div className="border-b border-white/10 p-4 sm:p-5">
-            <SectionTitle icon={Users} title="Candidatures récentes" caption="Vue de pilotage, sans exposer les mots de passe." />
+            <SectionTitle icon={Users} title="Candidatures" caption="Recherche, filtrage et revue des dossiers." />
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label className="min-w-0 xl:col-span-2">
+                <span className="mb-2 block text-sm font-medium">Recherche globale</span>
+                <input
+                  value={filters.query}
+                  onChange={(event) => setFilters((value) => ({ ...value, query: event.target.value }))}
+                  placeholder="Nom, e-mail, téléphone, référence, ID transaction..."
+                  className="h-10 w-full rounded-md border border-white/10 bg-[#061426] px-3 text-sm text-white outline-none placeholder:text-kcs-muted/70 focus:border-kcs-gold/70 focus:ring-2 focus:ring-kcs-gold/20"
+                />
+              </label>
+              <FilterSelect label="Province" value={filters.province} options={provinceOptions} onChange={(province) => setFilters((value) => ({ ...value, province }))} />
+              <FilterSelect label="Paiement" value={filters.payment} options={paymentOptions} onChange={(payment) => setFilters((value) => ({ ...value, payment }))} />
+              <FilterSelect label="Statut" value={filters.status} options={statusOptions} formatter={formatStatus} onChange={(status) => setFilters((value) => ({ ...value, status }))} />
+              <FilterSelect label="Preuve" value={filters.proof} options={["avec_preuve", "sans_preuve"]} formatter={(value) => value === "avec_preuve" ? "Avec preuve" : "Sans preuve"} onChange={(proof) => setFilters((value) => ({ ...value, proof }))} />
+              <FilterSelect label="Décision" value={filters.decision} options={["decide", "non_decide"]} formatter={(value) => value === "decide" ? "Résultat communiqué" : "Sans résultat"} onChange={(decision) => setFilters((value) => ({ ...value, decision }))} />
+              <FilterSelect label="Tri" value={filters.sort} options={["recent", "ancien", "province", "statut"]} formatter={(value) => ({ recent: "Plus récents", ancien: "Plus anciens", province: "Province", statut: "Statut" }[value] ?? value)} onChange={(sort) => setFilters((value) => ({ ...value, sort }))} allowEmpty={false} />
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-kcs-muted">{filteredMetrics.length} candidature(s) trouvée(s) sur {metrics.length}.</p>
+              <button type="button" onClick={() => setFilters({ query: "", province: "", payment: "", status: "", proof: "", decision: "", sort: "recent" })} className="h-10 rounded-md border border-white/10 px-4 text-sm font-semibold text-kcs-muted hover:bg-white/[0.06] hover:text-white">
+                Réinitialiser
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -1116,7 +1111,6 @@ function ProgressRow({ label, value }: { label: string; value: number }) {
 function AdminTabs({ activeTab, onChange }: { activeTab: AdminTab; onChange: (tab: AdminTab) => void }) {
   const tabs: Array<{ id: AdminTab; label: string }> = [
     { id: "resume", label: "Résumé" },
-    { id: "recherche", label: "Recherche" },
     { id: "graphiques", label: "Graphiques" },
     { id: "candidatures", label: "Candidatures" },
     { id: "controle", label: "Contrôle" }

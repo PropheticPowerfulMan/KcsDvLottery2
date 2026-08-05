@@ -252,7 +252,9 @@ grant delete on public.applications to authenticated;
 grant select on public.applications to authenticated;
 grant select, update on public.result_email_queue to service_role;
 
-create or replace view public.admin_application_metrics as
+drop view if exists public.admin_application_metrics;
+
+create view public.admin_application_metrics as
 select
   id,
   first_name,
